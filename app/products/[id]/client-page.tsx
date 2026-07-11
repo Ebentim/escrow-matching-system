@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Calendar, Scale, Star, ArrowLeft, ShoppingCart, Info, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MapPin, Calendar, Scale, Star, ArrowLeft, ShoppingCart, Info, User, AlertCircle, X } from "lucide-react";
+import { placeOrder } from "@/app/actions/orders";
 
 interface ProductDetailProps {
   product: Product & { product_images?: { storage_path: string; is_primary: boolean }[] };
@@ -19,10 +23,41 @@ interface ProductDetailProps {
 }
 
 export function ProductDetailClient({ product, farmer }: ProductDetailProps) {
+  const router = useRouter();
   const [mainImage, setMainImage] = useState(
     product.product_images?.find(img => img.is_primary)?.storage_path || 
     product.product_images?.[0]?.storage_path
   );
+  
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderQuantity, setOrderQuantity] = useState(1);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [orderError, setOrderError] = useState("");
+
+  const handlePlaceOrder = async () => {
+    if (orderQuantity <= 0 || orderQuantity > Number(product.quantity)) {
+      setOrderError("Invalid quantity");
+      return;
+    }
+    
+    setOrderLoading(true);
+    setOrderError("");
+    
+    try {
+      const result = await placeOrder(product.id, product.farmer_id, orderQuantity, Number(product.price));
+      
+      if (result?.error) {
+        setOrderError(result.error);
+        setOrderLoading(false);
+      } else if (result?.success) {
+        setShowOrderModal(false);
+        router.push("/buyer/orders");
+      }
+    } catch {
+      setOrderError("Failed to place order");
+      setOrderLoading(false);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -111,7 +146,12 @@ export function ProductDetailClient({ product, farmer }: ProductDetailProps) {
           </div>
 
           <div className="mt-auto space-y-4">
-            <Button size="lg" className="w-full h-14 text-lg" disabled={product.status !== 'available'}>
+            <Button 
+              size="lg" 
+              className="w-full h-14 text-lg" 
+              disabled={product.status !== 'available'}
+              onClick={() => setShowOrderModal(true)}
+            >
               <ShoppingCart className="w-5 h-5 mr-2" />
               Place Order
             </Button>
@@ -122,6 +162,58 @@ export function ProductDetailClient({ product, farmer }: ProductDetailProps) {
           </div>
         </div>
       </div>
+
+      {/* Order Modal Overlay */}
+      {showOrderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-background w-full max-w-md rounded-xl shadow-xl overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="font-bold text-lg">Place Order</h3>
+              <button onClick={() => setShowOrderModal(false)} className="p-1 hover:bg-muted rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <p className="font-semibold text-lg">{product.name}</p>
+                <p className="text-muted-foreground">₦{product.price} / {product.unit}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="qty">Quantity Needed ({product.unit})</Label>
+                <Input 
+                  id="qty" 
+                  type="number" 
+                  min="1" 
+                  max={Number(product.quantity)} 
+                  value={orderQuantity} 
+                  onChange={(e) => setOrderQuantity(Number(e.target.value))} 
+                />
+                <p className="text-xs text-muted-foreground">{product.quantity} available max.</p>
+              </div>
+
+              {orderError && (
+                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-md flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  {orderError}
+                </div>
+              )}
+
+              <div className="pt-4 border-t flex justify-between items-center">
+                <span className="font-medium text-muted-foreground">Total Price:</span>
+                <span className="font-bold text-xl text-primary">₦{orderQuantity * Number(product.price)}</span>
+              </div>
+            </div>
+            
+            <div className="p-4 border-t bg-muted/20 flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowOrderModal(false)}>Cancel</Button>
+              <Button className="flex-1" onClick={handlePlaceOrder} disabled={orderLoading}>
+                {orderLoading ? "Processing..." : "Confirm Order"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Farmer Profile Section */}
       <div className="mt-16 pt-12 border-t">
