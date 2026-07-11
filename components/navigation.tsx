@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { UserRole, NavItem } from "@/lib/types";
+import { logout } from "@/app/(auth)/actions";
 
 const navItems: Record<UserRole, NavItem[]> = {
   farmer: [
@@ -43,6 +44,10 @@ export function Navigation({ role }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const currentNavItems = role ? navItems[role] : [];
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -82,7 +87,7 @@ export function Navigation({ role }: NavigationProps) {
               <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium capitalize text-muted-foreground">
                 {role}
               </span>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </>
@@ -155,7 +160,7 @@ export function Navigation({ role }: NavigationProps) {
           </nav>
           <div className="mt-4 flex flex-col gap-2 border-t border-border/40 pt-4">
             {role ? (
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleLogout}>
                 Logout
               </Button>
             ) : (

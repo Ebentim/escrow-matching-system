@@ -46,13 +46,13 @@ scaffolding only.
 ```
 
 ### Testing Requirements
-- [ ] Project builds and runs (`npm run dev`) with no errors
-- [ ] TailwindCSS v4 styles apply correctly on a sample page
-- [ ] At least one Shadcn component renders correctly
-- [ ] Supabase client initializes without throwing (verify with a console log of client instance)
-- [ ] Environment variables load correctly in both server and client contexts
-- [ ] Folder structure matches spec; confirm via directory listing
-- [ ] Lint and type-check pass with zero errors (`npm run lint`, `tsc --noEmit`)
+- [x] Project builds and runs (`npm run dev`) with no errors
+- [x] TailwindCSS v4 styles apply correctly on a sample page
+- [x] At least one Shadcn component renders correctly
+- [x] Supabase client initializes without throwing (verify with a console log of client instance)
+- [x] Environment variables load correctly in both server and client contexts
+- [x] Folder structure matches spec; confirm via directory listing
+- [x] Lint and type-check pass with zero errors (`npm run lint`, `tsc --noEmit`)
 
 ---
 
@@ -111,16 +111,16 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] All migrations run cleanly against a fresh Supabase instance with zero errors
-- [ ] Foreign key constraints reject invalid inserts (test with at least 3 deliberate violations)
-- [ ] RLS policies verified per role:
-  - [ ] Farmer A cannot read/write Farmer B's products
-  - [ ] Buyer cannot view another buyer's orders
-  - [ ] Agent cannot view deliveries not assigned to them
-  - [ ] Admin can read across all tables
-- [ ] Seed script populates without conflict and is idempotent (safe to re-run)
-- [ ] Mermaid ER diagram renders correctly and matches implemented schema
-- [ ] Indexes confirmed via `EXPLAIN ANALYZE` on a sample product search query (should use index, not sequential scan)
+- [x] All migrations run cleanly against a fresh Supabase instance with zero errors
+- [x] Foreign key constraints reject invalid inserts (test with at least 3 deliberate violations)
+- [x] RLS policies verified per role:
+  - [x] Farmer A cannot read/write Farmer B's products
+  - [x] Buyer cannot view another buyer's orders
+  - [x] Agent cannot view deliveries not assigned to them
+  - [x] Admin can read across all tables
+- [x] Seed script populates without conflict and is idempotent (safe to re-run)
+- [x] Mermaid ER diagram renders correctly and matches implemented schema
+- [x] Indexes confirmed via `EXPLAIN ANALYZE` on a sample product search query (should use index, not sequential scan)
 
 ---
 
@@ -152,15 +152,15 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Farmer, buyer, and agent can each successfully register and receive a verification prompt
-- [ ] Unverified accounts cannot log in and receive a clear message
-- [ ] OTP flow: correct OTP logs user in; incorrect OTP is rejected; expired OTP is rejected
-- [ ] Login redirects each role to its correct dashboard
-- [ ] Attempting to access a farmer-only route as a buyer (and vice versa) redirects/blocks correctly
-- [ ] Session persists across page refresh
-- [ ] Logout clears session and blocks access to protected routes
-- [ ] Profile edit correctly updates the corresponding profile table, respecting RLS
-- [ ] UI tested on a small mobile viewport (360px width) for tap-target usability
+- [x] Farmer, buyer, and agent can each successfully register and receive a verification prompt
+- [x] Unverified accounts cannot log in and receive a clear message
+- [x] OTP flow: correct OTP logs user in; incorrect OTP is rejected; expired OTP is rejected
+- [x] Login redirects each role to its correct dashboard
+- [x] Attempting to access a farmer-only route as a buyer (and vice versa) redirects/blocks correctly
+- [x] Session persists across page refresh
+- [x] Logout clears session and blocks access to protected routes
+- [x] Profile edit correctly updates the corresponding profile table, respecting RLS
+- [x] UI tested on a small mobile viewport (360px width) for tap-target usability
 
 ---
 
@@ -189,14 +189,14 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Farmer can create a product with multiple images; primary image is correctly flagged
-- [ ] Newly created product is NOT visible to buyers until admin approval
-- [ ] Farmer can edit their product; changes persist and reflect immediately in UI
-- [ ] Farmer can delete/deactivate a product; it disappears from public search
-- [ ] Attempting to edit another farmer's product fails (RLS enforced, verified via direct API attempt)
-- [ ] Invalid form submissions (negative price, missing name, invalid date) are rejected client-side and server-side
-- [ ] Image upload rejects non-image files and oversized files with a clear error
-- [ ] Load test: farmer with 50+ products — list renders without significant lag (<2s)
+- [x] Farmer can create a product with multiple images; primary image is correctly flagged
+- [x] Newly created product is NOT visible to buyers until admin approval
+- [x] Farmer can edit their product; changes persist and reflect immediately in UI
+- [x] Farmer can delete/deactivate a product; it disappears from public search
+- [x] Attempting to edit another farmer's product fails (RLS enforced, verified via direct API attempt)
+- [x] Invalid form submissions (negative price, missing name, invalid date) are rejected client-side and server-side
+- [x] Image upload rejects non-image files and oversized files with a clear error
+- [x] Load test: farmer with 50+ products — list renders without significant lag (<2s)
 
 ---
 

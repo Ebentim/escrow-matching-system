@@ -113,10 +113,10 @@ This project follows a phased development approach:
 
 | Phase | Description                          | Status |
 | ----- | ------------------------------------ | ------ |
-| 0     | Project Scaffolding & Architecture   | 🔄 In Progress |
-| 1     | Database Design & Schema             | ⏳ Pending |
-| 2     | Authentication & User Registration   | ⏳ Pending |
-| 3     | Farmer Product Listing               | ⏳ Pending |
+| 0     | Project Scaffolding & Architecture   | ✅ Done |
+| 1     | Database Design & Schema             | ✅ Done |
+| 2     | Authentication & User Registration   | ✅ Done |
+| 3     | Farmer Product Listing               | ✅ Done |
 | 4     | Buyer Search & Discovery             | ⏳ Pending |
 | 5     | Matching Algorithm                   | ⏳ Pending |
 | 6     | Order & Escrow Payments              | ⏳ Pending |

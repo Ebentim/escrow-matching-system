@@ -75,6 +75,7 @@ export interface Product {
   geolocation: { lat: number; lng: number } | null;
   status: ProductStatus;
   created_at: string;
+  product_images?: { storage_path: string; is_primary: boolean }[];
 }
 
 export interface NavItem {
