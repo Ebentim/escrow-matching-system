@@ -20,9 +20,11 @@ interface ProductDetailProps {
     rating_avg: number;
     users?: { full_name: string; phone?: string };
   } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reviews: any[];
 }
 
-export function ProductDetailClient({ product, farmer }: ProductDetailProps) {
+export function ProductDetailClient({ product, farmer, reviews }: ProductDetailProps) {
   const router = useRouter();
   const [mainImage, setMainImage] = useState(
     product.product_images?.find(img => img.is_primary)?.storage_path || 
@@ -216,45 +218,79 @@ export function ProductDetailClient({ product, farmer }: ProductDetailProps) {
       )}
 
       {/* Farmer Profile Section */}
-      <div className="mt-16 pt-12 border-t">
-        <h2 className="text-2xl font-bold mb-6">About the Farmer</h2>
-        <Card>
-          <CardContent className="p-6">
-            {farmer ? (
-              <div className="flex flex-col md:flex-row gap-8 items-start">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border-4 border-background shadow-sm">
-                  <User className="w-10 h-10 text-primary" />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h3 className="text-xl font-bold">{farmer.farm_name}</h3>
-                    <p className="text-muted-foreground">{farmer.users?.full_name}</p>
+      <div className="mt-16 pt-12 border-t grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold mb-6">About the Farmer</h2>
+            <Card>
+              <CardContent className="p-6">
+                {farmer ? (
+                  <div className="flex flex-col md:flex-row gap-8 items-start">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border-4 border-background shadow-sm">
+                      <User className="w-10 h-10 text-primary" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div>
+                        <h3 className="text-xl font-bold">{farmer.farm_name}</h3>
+                        <p className="text-muted-foreground">{farmer.users?.full_name}</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center">
+                          <Star className="w-4 h-4 text-yellow-500 mr-1 fill-yellow-500" />
+                          <span className="font-medium">{farmer.rating_avg > 0 ? farmer.rating_avg.toFixed(1) : 'New'}</span>
+                          <span className="text-muted-foreground ml-1">Rating</span>
+                        </div>
+                        <div className="flex items-center text-muted-foreground">
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {farmer.farm_location}
+                        </div>
+                      </div>
+                      
+                      {farmer.bio && (
+                        <div className="pt-4 border-t">
+                          <p className="text-sm leading-relaxed">{farmer.bio}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center">
-                      <Star className="w-4 h-4 text-yellow-500 mr-1 fill-yellow-500" />
-                      <span className="font-medium">{farmer.rating_avg > 0 ? farmer.rating_avg.toFixed(1) : 'New'}</span>
-                      <span className="text-muted-foreground ml-1">Rating</span>
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      {farmer.farm_location}
-                    </div>
-                  </div>
-                  
-                  {farmer.bio && (
-                    <div className="pt-4 border-t">
-                      <p className="text-sm leading-relaxed">{farmer.bio}</p>
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">Farmer information is currently unavailable.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Recent Reviews</h2>
+            {reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((review, idx) => (
+                  <Card key={idx}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-semibold">{review.reviewer?.full_name || 'Anonymous'}</p>
+                          <div className="flex items-center mt-1">
+                            {[1,2,3,4,5].map(star => (
+                              <Star key={star} className={`w-3 h-3 ${star <= review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{new Date(review.created_at).toLocaleDateString()}</span>
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm mt-3 text-muted-foreground">{review.comment}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-4">Farmer information is currently unavailable.</p>
+              <p className="text-muted-foreground text-center py-8 border rounded-md border-dashed">No reviews yet.</p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

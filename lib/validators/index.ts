@@ -57,7 +57,7 @@ export const productSchema = z.object({
       path: z.string().optional(), // Storage path (server response)
       is_primary: z.boolean().default(false),
     })
-  ).min(1, "At least one product image is required"),
+  ).optional().default([]),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

@@ -197,6 +197,32 @@ export async function payOrder(orderId: string) {
     message: `Payment received in escrow. Order is ready for delivery.`
   })
 
+  // Phase 7: Delivery Assignment
+  // Find an available agent
+  const { data: agents } = await supabase
+    .from("delivery_agent_profiles")
+    .select("user_id")
+    .eq("availability_status", true)
+    .limit(1)
+
+  if (agents && agents.length > 0) {
+    const agentId = agents[0].user_id
+    
+    // Create delivery record
+    await supabase.from("deliveries").insert({
+      order_id: orderId,
+      agent_id: agentId,
+      status: 'assigned'
+    })
+    
+    // Notify agent
+    await supabase.from("notifications").insert({
+      user_id: agentId,
+      type: 'delivery_assigned',
+      message: `You have been assigned a new delivery.`
+    })
+  }
+
   revalidatePath("/buyer/orders")
   return { success: true }
 }

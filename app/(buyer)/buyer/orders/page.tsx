@@ -13,7 +13,10 @@ export default async function BuyerOrdersPage() {
     .select(`
       *,
       products (name, crop_type, unit, product_images(storage_path, is_primary)),
-      farmer_profiles!orders_farmer_id_fkey(farm_name)
+      farmer_profiles!orders_farmer_id_fkey(farm_name),
+      digital_receipts (pdf_storage_path),
+      ratings_reviews(reviewer_id, reviewee_id),
+      deliveries(agent_id)
     `)
     .eq("buyer_id", user.id)
     .order("created_at", { ascending: false })

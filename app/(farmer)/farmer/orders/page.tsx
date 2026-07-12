@@ -14,7 +14,9 @@ export default async function FarmerOrdersPage() {
       *,
       products (name, crop_type, unit, product_images(storage_path, is_primary)),
       buyer_profiles!orders_buyer_id_fkey(business_name),
-      users!orders_buyer_id_fkey(full_name, phone)
+      users!orders_buyer_id_fkey(full_name, phone),
+      digital_receipts (pdf_storage_path),
+      ratings_reviews(reviewer_id, reviewee_id)
     `)
     .eq("farmer_id", user.id)
     .order("created_at", { ascending: false })

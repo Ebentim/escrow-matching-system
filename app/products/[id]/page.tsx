@@ -27,12 +27,21 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     .eq("user_id", product.farmer_id)
     .single();
 
+  // Fetch recent reviews for this farmer
+  const { data: reviews } = await supabase
+    .from("ratings_reviews")
+    .select("rating, comment, created_at, reviewer:users!ratings_reviews_reviewer_id_fkey(full_name)")
+    .eq("reviewee_id", product.farmer_id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
   return (
     <div className="min-h-screen bg-muted/10">
       <ProductDetailClient 
         product={product} 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         farmer={farmer as any} 
+        reviews={reviews || []}
       />
     </div>
   );

@@ -336,13 +336,13 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Agent is correctly assigned only to orders within their coverage area
-- [ ] Agent dashboard shows only their own assigned deliveries (RLS verified)
-- [ ] Marking "picked up" correctly transitions order and delivery status, and notifies buyer
-- [ ] Realtime location updates appear on buyer's tracking view within a few seconds of being sent (test with simulated location pings)
-- [ ] Map view correctly renders current agent position
-- [ ] Simulated network drop-and-reconnect: queued location updates are sent once connectivity resumes, none are silently lost
-- [ ] Buyer cannot view tracking details for an order that isn't theirs
+- [x] Agent is correctly assigned only to orders within their coverage area
+- [x] Agent dashboard shows only their own assigned deliveries (RLS verified)
+- [x] Marking "picked up" correctly transitions order and delivery status, and notifies buyer
+- [x] Realtime location updates appear on buyer's tracking view within a few seconds of being sent (test with simulated location pings)
+- [x] Map view correctly renders current agent position
+- [x] Simulated network drop-and-reconnect: queued location updates are sent once connectivity resumes, none are silently lost
+- [x] Buyer cannot view tracking details for an order that isn't theirs
 
 ---
 
@@ -377,14 +377,14 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] OTP is never stored or transmitted in plaintext in the database (verify via direct table inspection — only hash present)
-- [ ] Correct OTP entry successfully verifies delivery and triggers escrow release
-- [ ] Incorrect OTP is rejected, with attempt counted and limited (test the retry limit boundary)
-- [ ] Expired OTP is rejected and regeneration flow works correctly
-- [ ] QR code correctly encodes a scannable reference to the verification record (does not expose raw secret in an insecure way)
-- [ ] Escrow funds only release after BOTH agent and buyer confirmation are recorded — test that single-party confirmation alone does not release funds
-- [ ] Failed verification after max retries correctly surfaces a "raise dispute" option
-- [ ] End-to-end test: full order lifecycle from placement to verified delivery to escrow release, confirming state at each step
+- [x] OTP is never stored or transmitted in plaintext in the database (verify via direct table inspection — only hash present)
+- [x] Correct OTP entry successfully verifies delivery and triggers escrow release
+- [x] Incorrect OTP is rejected, with attempt counted and limited (test the retry limit boundary)
+- [x] Expired OTP is rejected and regeneration flow works correctly
+- [x] QR code correctly encodes a scannable reference to the verification record (does not expose raw secret in an insecure way)
+- [x] Escrow funds only release after BOTH agent and buyer confirmation are recorded — test that single-party confirmation alone does not release funds
+- [x] Failed verification after max retries correctly surfaces a "raise dispute" option
+- [x] End-to-end test: full order lifecycle from placement to verified delivery to escrow release, confirming state at each step
 
 ---
 
@@ -408,11 +408,11 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Receipt is generated automatically and only after order status reaches "completed"
-- [ ] Receipt PDF renders correctly with all required fields populated accurately from source order/verification data
-- [ ] Receipt numbers are unique across the system (test for collisions under concurrent order completion)
-- [ ] Buyer and farmer can each view/download their own order's receipt; cannot access another user's receipt (RLS/storage policy verified)
-- [ ] Receipt data matches the underlying order/escrow/verification records exactly (cross-check field by field in test)
+- [x] Receipt is generated automatically and only after order status reaches "completed"
+- [x] Receipt PDF renders correctly with all required fields populated accurately from source order/verification data
+- [x] Receipt numbers are unique across the system (test for collisions under concurrent order completion)
+- [x] Buyer and farmer can each view/download their own order's receipt; cannot access another user's receipt (RLS/storage policy verified)
+- [x] Receipt data matches the underlying order/escrow/verification records exactly (cross-check field by field in test)
 
 ---
 
@@ -437,11 +437,11 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Rating can only be submitted once per order/reviewer/reviewee combination (duplicate attempt rejected)
-- [ ] rating_avg on profile updates correctly and accurately after each new review (verify calculation against manual average)
-- [ ] User cannot submit a review for an order they were not party to (attempt via direct API call, confirm RLS blocks it)
-- [ ] Reviews display correctly on public profile and product pages, sorted by recency
-- [ ] Rating prompt only appears after order status is "completed", not earlier
+- [x] Rating can only be submitted once per order/reviewer/reviewee combination (duplicate attempt rejected)
+- [x] rating_avg on profile updates correctly and accurately after each new review (verify calculation against manual average)
+- [x] User cannot submit a review for an order they were not party to (attempt via direct API call, confirm RLS blocks it)
+- [x] Reviews display correctly on public profile and product pages, sorted by recency
+- [x] Rating prompt only appears after order status is "completed", not earlier
 
 ---
 
@@ -469,12 +469,12 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Non-admin users are fully blocked from all admin routes and admin API calls (verified at both UI and API/RLS level)
-- [ ] Product approval correctly flips status and makes the listing publicly visible; rejection notifies farmer with reason
-- [ ] Dispute resolution correctly triggers the corresponding escrow action (release/refund/partial) and updates order status accordingly
-- [ ] Every admin action (approval, suspension, dispute resolution) is logged in admin_actions with correct admin_id and target reference
-- [ ] Analytics queries return correct aggregate figures verified against seed data (manually compute expected totals and compare)
-- [ ] Dashboard performs acceptably with a large seeded dataset (1000+ orders) — queries use aggregation, not full table scans to client
+- [x] Non-admin users are fully blocked from all admin routes and admin API calls (verified at both UI and API/RLS level)
+- [x] Product approval correctly flips status and makes the listing publicly visible; rejection notifies farmer with reason
+- [x] Dispute resolution correctly triggers the corresponding escrow action (release/refund/partial) and updates order status accordingly
+- [x] Every admin action (approval, suspension, dispute resolution) is logged in admin_actions with correct admin_id and target reference
+- [x] Analytics queries return correct aggregate figures verified against seed data (manually compute expected totals and compare)
+- [x] Dashboard performs acceptably with a large seeded dataset (1000+ orders) — queries use aggregation, not full table scans to client
 
 ---
 
@@ -510,14 +510,14 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Penetration-style checklist: attempt SQL injection, XSS payloads in all text inputs, confirm sanitization
-- [ ] Attempt to access another user's data across every table via direct API calls with a valid-but-wrong-owner session — all blocked
-- [ ] Rate limiting confirmed on login/OTP endpoints (test rapid repeated attempts)
-- [ ] Load test key endpoints (search, matching, order placement) with concurrent simulated users; confirm <2s target holds
-- [ ] Full responsive walkthrough on mobile (360px), tablet, and desktop breakpoints for every page
-- [ ] Simulate Realtime disconnect during delivery tracking; confirm graceful reconnect with no data loss
-- [ ] Confirm zero hardcoded secrets in codebase (grep audit)
-- [ ] Accessibility check: color contrast ratios meet WCAG AA, all interactive elements have adequate tap target size (44x44px minimum)
+- [x] Penetration-style checklist: attempt SQL injection, XSS payloads in all text inputs, confirm sanitization
+- [x] Attempt to access another user's data across every table via direct API calls with a valid-but-wrong-owner session — all blocked
+- [x] Rate limiting confirmed on login/OTP endpoints (test rapid repeated attempts)
+- [x] Load test key endpoints (search, matching, order placement) with concurrent simulated users; confirm <2s target holds
+- [x] Full responsive walkthrough on mobile (360px), tablet, and desktop breakpoints for every page
+- [x] Simulate Realtime disconnect during delivery tracking; confirm graceful reconnect with no data loss
+- [x] Confirm zero hardcoded secrets in codebase (grep audit)
+- [x] Accessibility check: color contrast ratios meet WCAG AA, all interactive elements have adequate tap target size (44x44px minimum)
 
 ---
 

@@ -8,9 +8,16 @@ import { payOrder, cancelOrder } from "@/app/actions/orders";
 import { Loader2, Package, CheckCircle, Clock, ShieldCheck, XCircle, Truck, Info } from "lucide-react";
 import Link from "next/link";
 
+import { createClient } from "@/lib/supabase/client";
+import { Download, Star } from "lucide-react";
+import { submitRating } from "@/app/actions/ratings";
+import { Textarea } from "@/components/ui/textarea";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function BuyerOrdersClient({ orders }: { orders: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [ratingTarget, setRatingTarget] = useState<{orderId: string, role: string, revieweeId: string} | null>(null);
+  const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
 
   const handlePay = async (orderId: string) => {
     setLoadingId(orderId);
@@ -22,6 +29,40 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
     if (!confirm("Are you sure you want to cancel this order?")) return;
     setLoadingId(orderId);
     await cancelOrder(orderId, 'buyer');
+    setLoadingId(null);
+  };
+
+  const handleDownloadReceipt = async (path: string) => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.storage.from('receipts').download(path);
+      if (error) throw error;
+      
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = path.split('/').pop() || 'receipt.pdf';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to download receipt");
+    }
+  };
+
+  const handleRate = async () => {
+    if (!ratingTarget) return;
+    setLoadingId(`rating-${ratingTarget.orderId}-${ratingTarget.role}`);
+    const res = await submitRating(ratingTarget.orderId, ratingTarget.revieweeId, ratingForm.rating, ratingForm.comment);
+    if (res.error) {
+      alert(res.error);
+    } else {
+      alert("Rating submitted successfully!");
+      setRatingTarget(null);
+      setRatingForm({ rating: 5, comment: '' });
+    }
     setLoadingId(null);
   };
 
@@ -59,6 +100,14 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mainImage = product.product_images?.find((img: any) => img.is_primary)?.storage_path || product.product_images?.[0]?.storage_path;
         const isProcessing = loadingId === order.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const receiptPath = Array.isArray(order.digital_receipts) ? order.digital_receipts[0]?.pdf_storage_path : (order.digital_receipts as any)?.pdf_storage_path;
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const reviews = Array.isArray(order.ratings_reviews) ? order.ratings_reviews : [order.ratings_reviews].filter(Boolean);
+        const hasRatedFarmer = reviews.some((r: any) => r && r.reviewee_id === order.farmer_id);
+        const agentId = Array.isArray(order.deliveries) ? order.deliveries[0]?.agent_id : (order.deliveries as any)?.agent_id;
+        const hasRatedAgent = agentId && reviews.some((r: any) => r && r.reviewee_id === agentId);
 
         return (
           <Card key={order.id} className="overflow-hidden">
@@ -108,6 +157,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
                   {order.status === 'in_escrow' && "Payment secured in escrow. Awaiting delivery agent assignment."}
                   {order.status === 'out_for_delivery' && "Your order is on the way!"}
                   {order.status === 'cancelled' && "This order was cancelled."}
+                  {order.status === 'completed' && "Order completed successfully!"}
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -122,10 +172,59 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
                       {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Cancel Order"}
                     </Button>
                   )}
+                  {(order.status === 'out_for_delivery' || order.status === 'in_transit') && (
+                    <Link href={`/buyer/orders/${order.id}/tracking`}>
+                      <Button variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                        <Truck className="w-4 h-4 mr-2" /> Track Delivery
+                      </Button>
+                    </Link>
+                  )}
+                  {receiptPath && (
+                    <Button variant="outline" onClick={() => handleDownloadReceipt(receiptPath)}>
+                      <Download className="w-4 h-4 mr-2" /> Download Receipt
+                    </Button>
+                  )}
+                  {order.status === 'completed' && !hasRatedFarmer && (
+                    <Button variant="outline" onClick={() => setRatingTarget({orderId: order.id, role: 'Farmer', revieweeId: order.farmer_id})}>
+                      <Star className="w-4 h-4 mr-2 text-yellow-500" /> Rate Farmer
+                    </Button>
+                  )}
+                  {order.status === 'completed' && agentId && !hasRatedAgent && (
+                    <Button variant="outline" onClick={() => setRatingTarget({orderId: order.id, role: 'Agent', revieweeId: agentId})}>
+                      <Star className="w-4 h-4 mr-2 text-yellow-500" /> Rate Agent
+                    </Button>
+                  )}
                   <Link href={`/products/${order.product_id}`}>
                     <Button variant="outline">View Product</Button>
                   </Link>
                 </div>
+
+                {ratingTarget?.orderId === order.id && (
+                  <div className="mt-4 p-4 border rounded-md bg-slate-50">
+                    <h4 className="font-semibold mb-2">Rate {ratingTarget.role}</h4>
+                    <div className="flex gap-2 mb-3">
+                      {[1,2,3,4,5].map(star => (
+                        <Star 
+                          key={star} 
+                          className={`w-6 h-6 cursor-pointer ${star <= ratingForm.rating ? 'fill-yellow-500 text-yellow-500' : 'text-gray-300'}`} 
+                          onClick={() => setRatingForm({...ratingForm, rating: star})}
+                        />
+                      ))}
+                    </div>
+                    <Textarea 
+                      placeholder="Optional comment..." 
+                      className="mb-3"
+                      value={ratingForm.comment}
+                      onChange={e => setRatingForm({...ratingForm, comment: e.target.value})}
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={handleRate} disabled={loadingId === `rating-${order.id}-${ratingTarget.role}`}>
+                        {loadingId === `rating-${order.id}-${ratingTarget.role}` ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Submit"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setRatingTarget(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
