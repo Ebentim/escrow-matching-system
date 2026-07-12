@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { LoginInput, RegisterInput } from "@/lib/validators";
@@ -101,16 +102,64 @@ export async function register(data: RegisterInput) {
   });
 
   if (error) {
-    // Log full error server-side for debugging (not exposed to client)
     try {
       console.error("Supabase signUp error:", error);
     } catch {}
     return { error: error.message };
   }
 
-  try {
-    console.log("Supabase signUp success:", authData);
-  } catch {}
+  const userId = authData.user?.id;
+
+  if (userId) {
+    const serviceSupabase = createServiceClient();
+
+    const { error: userInsertError } = await serviceSupabase.from("users").insert({
+      id: userId,
+      role: data.role,
+      full_name: data.full_name,
+      phone: data.phone,
+      email: data.email,
+      location: data.location,
+      is_verified: false,
+      is_active: true,
+    });
+
+    if (userInsertError) {
+      console.error("User row creation error:", userInsertError);
+      return { error: userInsertError.message };
+    }
+
+    let profileError: { message: string } | null = null;
+
+    if (data.role === "farmer") {
+      const { error } = await serviceSupabase.from("farmer_profiles").insert({
+        user_id: userId,
+        farm_name: data.farm_name ?? "My Farm",
+        farm_location: data.farm_location ?? "Unknown Location",
+        bio: "",
+      });
+      profileError = error;
+    } else if (data.role === "buyer") {
+      const { error } = await serviceSupabase.from("buyer_profiles").insert({
+        user_id: userId,
+        business_name: data.business_name ?? data.full_name ?? "My Business",
+        delivery_address: data.delivery_address ?? "Unknown Address",
+      });
+      profileError = error;
+    } else if (data.role === "agent") {
+      const { error } = await serviceSupabase.from("delivery_agent_profiles").insert({
+        user_id: userId,
+        vehicle_type: data.vehicle_type ?? "Unknown",
+        coverage_area: data.coverage_area ?? "Unknown",
+      });
+      profileError = error;
+    }
+
+    if (profileError) {
+      console.error("Profile row creation error:", profileError);
+      return { error: profileError.message };
+    }
+  }
 
   return { success: "Registration successful. Please check your email to verify your account." };
 }

@@ -1,4 +1,4 @@
-import { z } from "zod/v4";
+import { z } from "zod";
 
 // Placeholder Zod schemas - will be expanded in subsequent phases
 
