@@ -105,7 +105,7 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
         </Card>
         
         {/* Phase 8 Verification Display */}
-        {otp && (orderStatus === 'out_for_delivery' || orderStatus === 'delivered' || orderStatus === 'verified') && (
+        {otp && (orderStatus === 'out_for_delivery' || orderStatus === 'delivered' || orderStatus === 'verified' || orderStatus === 'completed') && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">

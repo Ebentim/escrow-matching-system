@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     // Fetch all available products of this crop type
     const { data: products, error } = await supabase
       .from('products')
-      .select('*, product_images(storage_path, is_primary), farmer_profiles!products_farmer_id_fkey(farm_name, rating_avg)')
+      .select('*, product_images(storage_path, is_primary), farmer:users!products_farmer_id_fkey(farmer_profiles(farm_name, rating_avg))')
       .eq('status', 'available')
       .ilike('crop_type', `%${cropType}%`);
 

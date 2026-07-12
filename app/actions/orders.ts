@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 
 export async function placeOrder(
@@ -68,7 +69,8 @@ export async function placeOrder(
   }
 
   // 4. Notify farmer
-  await supabase.from("notifications").insert({
+  const serviceClient = createServiceClient()
+  await serviceClient.from("notifications").insert({
     user_id: farmerId,
     type: 'new_order',
     message: `You have a new pending order for ${quantity} units.`
@@ -103,7 +105,8 @@ export async function acceptOrder(orderId: string) {
 
   if (updateErr) return { error: "Failed to accept order" }
 
-  await supabase.from("notifications").insert({
+  const serviceClient = createServiceClient()
+  await serviceClient.from("notifications").insert({
     user_id: order.buyer_id,
     type: 'order_accepted',
     message: `Your order has been accepted and is awaiting payment.`
@@ -145,7 +148,8 @@ export async function rejectOrder(orderId: string) {
     }).eq("id", order.product_id)
   }
 
-  await supabase.from("notifications").insert({
+  const serviceClient = createServiceClient()
+  await serviceClient.from("notifications").insert({
     user_id: order.buyer_id,
     type: 'order_rejected',
     message: `Your order was rejected by the farmer.`
@@ -173,7 +177,8 @@ export async function payOrder(orderId: string) {
   if (order.status !== 'accepted') return { error: "Order is not ready for payment" }
 
   // Insert into escrow
-  const { error: escrowErr } = await supabase
+  const serviceClient = createServiceClient()
+  const { error: escrowErr } = await serviceClient
     .from("escrow_transactions")
     .insert({
       order_id: orderId,
@@ -191,7 +196,7 @@ export async function payOrder(orderId: string) {
 
   if (updateErr) return { error: "Failed to update order status" }
 
-  await supabase.from("notifications").insert({
+  await serviceClient.from("notifications").insert({
     user_id: order.farmer_id,
     type: 'payment_received',
     message: `Payment received in escrow. Order is ready for delivery.`
@@ -209,14 +214,14 @@ export async function payOrder(orderId: string) {
     const agentId = agents[0].user_id
     
     // Create delivery record
-    await supabase.from("deliveries").insert({
+    await serviceClient.from("deliveries").insert({
       order_id: orderId,
       agent_id: agentId,
       status: 'assigned'
     })
     
     // Notify agent
-    await supabase.from("notifications").insert({
+    await serviceClient.from("notifications").insert({
       user_id: agentId,
       type: 'delivery_assigned',
       message: `You have been assigned a new delivery.`
@@ -263,7 +268,8 @@ export async function cancelOrder(orderId: string, asRole: 'buyer' | 'farmer') {
 
   // Notify other party
   const notifyUserId = asRole === 'buyer' ? order.farmer_id : order.buyer_id
-  await supabase.from("notifications").insert({
+  const serviceClient = createServiceClient()
+  await serviceClient.from("notifications").insert({
     user_id: notifyUserId,
     type: 'order_cancelled',
     message: `Order was cancelled by the ${asRole}.`

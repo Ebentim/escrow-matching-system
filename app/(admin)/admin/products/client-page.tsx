@@ -54,7 +54,7 @@ export function ProductsClient({ products }: { products: any[] }) {
             </div>
             <CardContent className="p-4 flex-1 flex flex-col">
               <h3 className="font-bold text-lg">{product.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4">Farm: {product.farmer_profiles?.farm_name || 'Unknown'}</p>
+              <p className="text-sm text-muted-foreground mb-4">Farm: {product.farmer?.farmer_profiles?.farm_name || 'Unknown'}</p>
               
               <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                 <div>

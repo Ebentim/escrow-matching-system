@@ -11,8 +11,8 @@ export default async function AdminDisputesPage() {
       orders (
         *,
         products (name, price, unit),
-        buyer_profiles (business_name),
-        farmer_profiles (farm_name),
+        buyer:users!orders_buyer_id_fkey (buyer_profiles (business_name)),
+        farmer:users!orders_farmer_id_fkey (farmer_profiles (farm_name)),
         escrow_transactions (amount, status)
       ),
       users!disputes_raised_by_fkey (full_name, role)

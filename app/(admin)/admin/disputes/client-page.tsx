@@ -33,8 +33,8 @@ export function DisputesClient({ disputes }: { disputes: any[] }) {
       {disputes.map((dispute) => {
         const order = dispute.orders;
         const product = order?.products;
-        const buyer = order?.buyer_profiles;
-        const farmer = order?.farmer_profiles;
+        const buyer = order?.buyer?.buyer_profiles;
+        const farmer = order?.farmer?.farmer_profiles;
         const escrow = Array.isArray(order?.escrow_transactions) ? order?.escrow_transactions[0] : order?.escrow_transactions;
 
         return (

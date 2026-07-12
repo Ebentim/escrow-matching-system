@@ -13,7 +13,7 @@ export default async function BuyerOrdersPage() {
     .select(`
       *,
       products (name, crop_type, unit, product_images(storage_path, is_primary)),
-      farmer_profiles!orders_farmer_id_fkey(farm_name),
+      farmer:users!orders_farmer_id_fkey(farmer_profiles(farm_name)),
       digital_receipts (pdf_storage_path),
       ratings_reviews(reviewer_id, reviewee_id),
       deliveries(agent_id)

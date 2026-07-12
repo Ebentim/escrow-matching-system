@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { payOrder, cancelOrder } from "@/app/actions/orders";
 import { Loader2, Package, CheckCircle, Clock, ShieldCheck, XCircle, Truck, Info } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { Download, Star } from "lucide-react";
@@ -15,20 +16,29 @@ import { Textarea } from "@/components/ui/textarea";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function BuyerOrdersClient({ orders }: { orders: any[] }) {
+  const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{orderId: string, role: string, revieweeId: string} | null>(null);
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
 
   const handlePay = async (orderId: string) => {
     setLoadingId(orderId);
-    await payOrder(orderId);
+    const res = await payOrder(orderId);
+    if (res?.error) {
+      alert(res.error);
+    }
+    router.refresh();
     setLoadingId(null);
   };
 
   const handleCancel = async (orderId: string) => {
     if (!confirm("Are you sure you want to cancel this order?")) return;
     setLoadingId(orderId);
-    await cancelOrder(orderId, 'buyer');
+    const res = await cancelOrder(orderId, 'buyer');
+    if (res?.error) {
+      alert(res.error);
+    }
+    router.refresh();
     setLoadingId(null);
   };
 
@@ -62,6 +72,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
       alert("Rating submitted successfully!");
       setRatingTarget(null);
       setRatingForm({ rating: 5, comment: '' });
+      router.refresh();
     }
     setLoadingId(null);
   };
@@ -96,7 +107,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
     <div className="space-y-4">
       {orders.map((order) => {
         const product = order.products;
-        const farmer = order.farmer_profiles;
+        const farmer = order.farmer?.farmer_profiles;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mainImage = product.product_images?.find((img: any) => img.is_primary)?.storage_path || product.product_images?.[0]?.storage_path;
         const isProcessing = loadingId === order.id;
@@ -201,7 +212,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
 
                 {ratingTarget?.orderId === order.id && (
                   <div className="mt-4 p-4 border rounded-md bg-slate-50">
-                    <h4 className="font-semibold mb-2">Rate {ratingTarget.role}</h4>
+                    <h4 className="font-semibold mb-2">Rate {ratingTarget?.role}</h4>
                     <div className="flex gap-2 mb-3">
                       {[1,2,3,4,5].map(star => (
                         <Star 
@@ -218,8 +229,8 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
                       onChange={e => setRatingForm({...ratingForm, comment: e.target.value})}
                     />
                     <div className="flex gap-2">
-                      <Button onClick={handleRate} disabled={loadingId === `rating-${order.id}-${ratingTarget.role}`}>
-                        {loadingId === `rating-${order.id}-${ratingTarget.role}` ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Submit"}
+                      <Button onClick={() => handleRate()} disabled={loadingId === `rating-${order.id}-${ratingTarget?.role}`}>
+                        {loadingId === `rating-${order.id}-${ratingTarget?.role}` ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Submit Rating"}
                       </Button>
                       <Button variant="outline" onClick={() => setRatingTarget(null)}>Cancel</Button>
                     </div>

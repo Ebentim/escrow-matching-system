@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 
 export async function markPickedUp(deliveryId: string) {
@@ -23,7 +24,7 @@ export async function markPickedUp(deliveryId: string) {
   const { error: updateErr } = await supabase
     .from("deliveries")
     .update({ 
-      status: 'out_for_delivery',
+      status: 'in_transit',
       pickup_time: new Date().toISOString()
     })
     .eq("id", deliveryId)
@@ -31,7 +32,8 @@ export async function markPickedUp(deliveryId: string) {
   if (updateErr) return { error: "Failed to update delivery" }
 
   // Update order status
-  const { error: orderErr } = await supabase
+  const serviceClient = createServiceClient()
+  const { error: orderErr } = await serviceClient
     .from("orders")
     .update({ status: 'out_for_delivery' })
     .eq("id", delivery.order_id)
@@ -45,7 +47,7 @@ export async function markPickedUp(deliveryId: string) {
   const codeHash = crypto.createHash('sha256').update(rawOtp).digest('hex')
 
   // Store in delivery_verifications
-  const { error: verifyErr } = await supabase
+  const { error: verifyErr } = await serviceClient
     .from("delivery_verifications")
     .insert({
       delivery_id: deliveryId,
@@ -60,7 +62,7 @@ export async function markPickedUp(deliveryId: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buyerId = (delivery.orders as any)?.buyer_id
   if (buyerId) {
-    await supabase.from("notifications").insert({
+    await serviceClient.from("notifications").insert({
       user_id: buyerId,
       type: 'out_for_delivery',
       message: `Your order is on the way! Your verification code is ${rawOtp}. Present this or its QR code to the agent.`
@@ -119,7 +121,8 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
   }
 
   // Mark verification as successful
-  await supabase
+  const serviceClient = createServiceClient()
+  await serviceClient
     .from("delivery_verifications")
     .update({ status: 'verified', verified_by: user.id, verified_at: new Date().toISOString() })
     .eq("id", verification.id)
@@ -138,7 +141,7 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
     await releaseEscrow(orderId)
   } else {
     // Agent confirmed, wait for buyer
-    await supabase.from("orders").update({ status: 'verified' }).eq("id", orderId)
+    await serviceClient.from("orders").update({ status: 'verified' }).eq("id", orderId)
   }
 
   revalidatePath("/agent/dashboard")
@@ -162,7 +165,8 @@ export async function buyerConfirmDelivery(orderId: string) {
     await releaseEscrow(orderId)
   } else {
     // Buyer confirmed first, wait for agent
-    await supabase.from("orders").update({ status: 'delivered' }).eq("id", orderId)
+    const serviceClient = createServiceClient()
+    await serviceClient.from("orders").update({ status: 'delivered' }).eq("id", orderId)
   }
 
   revalidatePath("/buyer/orders")
@@ -170,15 +174,16 @@ export async function buyerConfirmDelivery(orderId: string) {
 }
 
 async function releaseEscrow(orderId: string) {
-  const supabase = await createClient()
+  const serviceClient = createServiceClient()
+  const supabase = await createClient() // keeping for user queries
   // Update order to completed
-  await supabase.from("orders").update({ status: 'completed' }).eq("id", orderId)
+  await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
   
   // Update escrow to released
-  await supabase.from("escrow_transactions").update({ status: 'released', released_at: new Date().toISOString() }).eq("order_id", orderId)
+  await serviceClient.from("escrow_transactions").update({ status: 'released', released_at: new Date().toISOString() }).eq("order_id", orderId)
   
   // Fetch order data for receipt
-  const { data: order } = await supabase.from("orders").select(`
+  const { data: order } = await serviceClient.from("orders").select(`
     id, quantity_ordered, total_price, created_at,
     product:products ( name, unit, price ),
     farmer:users!orders_farmer_id_fkey ( id, full_name, phone ),
@@ -190,9 +195,10 @@ async function releaseEscrow(orderId: string) {
     )
   `).eq("id", orderId).single()
 
-  if (order?.farmer?.id) {
-    await supabase.from("notifications").insert({
-      user_id: order.farmer.id,
+  const farmer = Array.isArray(order?.farmer) ? order?.farmer[0] : order?.farmer;
+  if (farmer?.id) {
+    await serviceClient.from("notifications").insert({
+      user_id: farmer.id,
       type: 'escrow_released',
       message: `Delivery completed and escrow funds have been released for order ${orderId}!`
     })
@@ -201,7 +207,7 @@ async function releaseEscrow(orderId: string) {
   // Phase 9: Generate Receipt
   if (order) {
     try {
-      await generateReceipt(order, supabase);
+      await generateReceipt(order, serviceClient);
     } catch (e) {
       console.error("Failed to generate receipt:", e);
     }

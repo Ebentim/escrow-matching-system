@@ -7,16 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Loader2, MapPin, Truck, CheckCircle, Navigation, KeyRound } from "lucide-react";
 import { markPickedUp, updateAgentLocation, agentVerifyDelivery } from "@/app/actions/delivery";
+import { useRouter } from "next/navigation";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
+  const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
 
-  // Auto-start tracking if any delivery is in transit/out_for_delivery
+  // Auto-start tracking if any delivery is in transit
   useEffect(() => {
-    const activeDelivery = deliveries.find(d => d.status === 'out_for_delivery' || d.status === 'in_transit');
+    const activeDelivery = deliveries.find(d => d.status === 'in_transit');
     if (activeDelivery) {
       startTracking(activeDelivery.id);
     } else {
@@ -26,7 +28,9 @@ export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
 
   const handlePickUp = async (deliveryId: string) => {
     setLoadingId(deliveryId);
-    await markPickedUp(deliveryId);
+    const res = await markPickedUp(deliveryId);
+    if (res?.error) alert(res.error);
+    router.refresh();
     setLoadingId(null);
   };
 
@@ -42,6 +46,7 @@ export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
       alert(res.error);
     } else {
       alert("Delivery verified successfully!");
+      router.refresh();
     }
     setLoadingId(null);
   };
@@ -136,7 +141,7 @@ export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
                       Mark as Picked Up
                     </Button>
                   )}
-                  {delivery.status === 'out_for_delivery' && (
+                  {delivery.status === 'in_transit' && (
                     <Button variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200 cursor-default">
                       <CheckCircle className="w-4 h-4 mr-2" /> Live Tracking Active
                     </Button>
@@ -148,7 +153,7 @@ export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
                   )}
                 </div>
 
-                {delivery.status === 'out_for_delivery' && (
+                {delivery.status === 'in_transit' && (
                   <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t items-end">
                     <div className="w-full sm:max-w-xs">
                       <label className="text-sm font-medium mb-1 block">Buyer Verification Code (OTP)</label>

@@ -10,8 +10,10 @@ export default async function BuyerTrackingPage({ params }: { params: { id: stri
     redirect("/login");
   }
 
-  // Get order and delivery info
-  const { data: order } = await supabase
+  // Get order and delivery info using service role to bypass complex nested RLS joins
+  const { createServiceClient } = require("@/lib/supabase/service");
+  const serviceClient = createServiceClient();
+  const { data: order } = await serviceClient
     .from("orders")
     .select(`
       id, status, quantity_ordered, total_price,

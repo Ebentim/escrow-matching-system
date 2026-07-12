@@ -8,14 +8,16 @@ export default async function AdminProductsPage() {
     .from("products")
     .select(`
       *,
-      farmer_profiles (farm_name),
+      farmer:users!products_farmer_id_fkey (
+        farmer_profiles (farm_name)
+      ),
       product_images (storage_path, is_primary)
     `)
     .eq("status", "pending_approval")
     .order("created_at", { ascending: false });
 
   if (error) {
-    return <div>Failed to load pending products.</div>;
+    return <div>Failed to load pending products: {error.message} - {error.details} - {error.hint}</div>;
   }
 
   return (

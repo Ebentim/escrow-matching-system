@@ -13,25 +13,22 @@ const navItems: Record<UserRole, NavItem[]> = {
     { label: "Dashboard", href: "/farmer/dashboard" },
     { label: "My Products", href: "/farmer/products" },
     { label: "Orders", href: "/farmer/orders" },
-    { label: "Ratings", href: "/farmer/ratings" },
+    { label: "Profile", href: "/farmer/profile" },
   ],
   buyer: [
     { label: "Dashboard", href: "/buyer/dashboard" },
-    { label: "Browse Products", href: "/buyer/browse" },
+    { label: "Browse Products", href: "/products" },
     { label: "My Orders", href: "/buyer/orders" },
-    { label: "Ratings", href: "/buyer/ratings" },
+    { label: "Profile", href: "/buyer/profile" },
   ],
   agent: [
     { label: "Dashboard", href: "/agent/dashboard" },
-    { label: "Deliveries", href: "/agent/deliveries" },
-    { label: "Ratings", href: "/agent/ratings" },
   ],
   admin: [
     { label: "Dashboard", href: "/admin/dashboard" },
     { label: "Users", href: "/admin/users" },
-    { label: "Approvals", href: "/admin/approvals" },
+    { label: "Approvals", href: "/admin/products" },
     { label: "Disputes", href: "/admin/disputes" },
-    { label: "Analytics", href: "/admin/analytics" },
   ],
 };
 
