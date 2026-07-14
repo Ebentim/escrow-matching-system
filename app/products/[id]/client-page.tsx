@@ -90,7 +90,7 @@ export function ProductDetailClient({ product, farmer, reviews }: ProductDetailP
                 <button
                   key={idx}
                   onClick={() => setMainImage(img.storage_path)}
-                  className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
+                  className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 shrink-0 transition-all ${
                     mainImage === img.storage_path ? "border-primary shadow-md" : "border-transparent opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -226,7 +226,7 @@ export function ProductDetailClient({ product, farmer, reviews }: ProductDetailP
               <CardContent className="p-6">
                 {farmer ? (
                   <div className="flex flex-col md:flex-row gap-8 items-start">
-                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 border-4 border-background shadow-sm">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border-4 border-background shadow-sm">
                       <User className="w-10 h-10 text-primary" />
                     </div>
                     <div className="flex-1 space-y-4">

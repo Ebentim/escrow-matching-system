@@ -196,7 +196,7 @@ export function ProductsClient({ initialProducts, totalCount, currentPage, searc
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Desktop Sidebar */}
-        <div className="hidden md:block w-64 flex-shrink-0 space-y-6 border-r pr-6">
+        <div className="hidden md:block w-64 shrink-0 space-y-6 border-r pr-6">
           <div>
             <h3 className="font-semibold text-lg mb-4 flex items-center"><Filter className="w-4 h-4 mr-2"/> Filters</h3>
             {filterSidebar}
@@ -221,7 +221,7 @@ export function ProductsClient({ initialProducts, totalCount, currentPage, searc
               <div className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
                 {initialProducts.map((product) => (
                   <Card key={product.id} className={`overflow-hidden flex ${viewMode === "list" ? "flex-row sm:h-48" : "flex-col"} hover:shadow-md transition-shadow`}>
-                    <div className={`${viewMode === "list" ? "w-48 flex-shrink-0" : "h-48 w-full"} bg-muted relative group`}>
+                    <div className={`${viewMode === "list" ? "w-48 shrink-0" : "h-48 w-full"} bg-muted relative group`}>
                       {product.product_images && product.product_images.length > 0 ? (
                         <img 
                           src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${product.product_images.find((img) => img.is_primary)?.storage_path || product.product_images[0].storage_path}`}
@@ -251,11 +251,11 @@ export function ProductsClient({ initialProducts, totalCount, currentPage, searc
                       <CardContent className="pb-4 flex-1">
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center text-muted-foreground">
-                            <MapPin className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                             <span className="truncate">{product.location}</span>
                           </div>
                           <div className="flex items-center text-muted-foreground">
-                            <Calendar className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                            <Calendar className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                             <span>Harvest: {new Date(product.harvest_date).toLocaleDateString()}</span>
                           </div>
                           <div className="text-foreground font-medium mt-2">

@@ -83,7 +83,7 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
           </CardHeader>
           <CardContent className="p-0">
             {/* Simple Map Visualization */}
-            <div className="w-full h-[400px] bg-slate-100 relative flex flex-col items-center justify-center border-b">
+            <div className="w-full h-100 bg-slate-100 relative flex flex-col items-center justify-center border-b">
               {currentLocation ? (
                 <>
                   <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>

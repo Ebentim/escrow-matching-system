@@ -123,7 +123,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
         return (
           <Card key={order.id} className="overflow-hidden">
             <CardContent className="p-0 sm:flex">
-              <div className="w-full sm:w-48 h-48 bg-muted flex-shrink-0">
+              <div className="w-full sm:w-48 h-48 bg-muted shrink-0">
                 {mainImage ? (
                   <img 
                     src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${mainImage}`} 

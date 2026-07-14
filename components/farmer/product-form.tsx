@@ -131,7 +131,7 @@ export function ProductForm({ initialData, defaultLocation, onSuccess, onCancel 
     <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
       {error && (
         <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md flex items-center">
-          <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
           {error}
         </div>
       )}

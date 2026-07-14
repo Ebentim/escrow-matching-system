@@ -72,19 +72,18 @@ export default function LoginPage() {
           <Tabs defaultValue="email" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="email">Email</TabsTrigger>
-              <TabsTrigger value="phone">Phone (OTP)</TabsTrigger>
             </TabsList>
 
             {error && (
               <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md flex items-center mb-4">
-                <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
                 {error}
               </div>
             )}
             
             {success && (
               <div className="bg-green-100 text-green-800 text-sm p-3 rounded-md flex items-center mb-4">
-                <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 mr-2 shrink-0" />
                 {success}
               </div>
             )}
