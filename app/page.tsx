@@ -6,7 +6,7 @@ export default function HomePage() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative flex min-h-[80vh] flex-col items-center justify-center px-4 text-center">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/5 via-background to-background" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-b from-primary/5 via-background to-background" />
         <div className="mx-auto max-w-4xl space-y-8">
           <div className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
             🌾 Connecting Farmers Directly with Buyers
@@ -23,7 +23,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/register">
-              <Button size="lg" className="min-w-[200px] text-base">
+              <Button size="lg" className="min-w-50 text-base">
                 Get Started
               </Button>
             </Link>
@@ -31,7 +31,7 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="min-w-[200px] text-base"
+                className="min-w-50 text-base"
               >
                 Sign In
               </Button>
