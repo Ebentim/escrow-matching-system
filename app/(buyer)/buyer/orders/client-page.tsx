@@ -84,7 +84,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
   const handleRate = async () => {
     if (!ratingTarget) return;
     setLoadingId(`rating-${ratingTarget.orderId}-${ratingTarget.role}`);
-    const res = await submitRating(ratingTarget.orderId, ratingTarget.revieweeId, ratingTarget.role, ratingForm.rating, ratingForm.comment);
+    const res = await submitRating(ratingTarget.orderId, ratingTarget.revieweeId, ratingForm.rating, ratingForm.comment);
     if (res?.error) {
       await alert(res.error);
     } else {

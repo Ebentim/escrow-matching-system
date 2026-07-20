@@ -88,18 +88,16 @@ export function NotificationsDropdown() {
         handleMarkAsRead();
       }
     }}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-          <span className="sr-only">Notifications</span>
-        </Button>
+      <DropdownMenuTrigger className="relative p-2 hover:bg-accent rounded-md">
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+        <span className="sr-only">Notifications</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end" forceMount>
+      <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
           {unreadCount > 0 && (

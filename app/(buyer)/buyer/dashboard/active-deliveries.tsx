@@ -51,7 +51,7 @@ export async function ActiveDeliveries({ userId }: { userId: string }) {
             }
           }
 
-          const productName = Array.isArray(order.product) ? order.product[0]?.name : order.product?.name;
+          const productName = Array.isArray(order.product) ? (order.product as any)[0]?.name : (order.product as any)?.name;
 
           return (
             <div key={order.id} className="border border-border/50 bg-card rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">

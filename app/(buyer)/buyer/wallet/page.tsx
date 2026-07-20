@@ -27,7 +27,7 @@ export default async function BuyerWalletPage() {
   let totalReleased = 0;
   let totalRefunded = 0;
 
-  const transactions = [];
+  const transactions: any[] = [];
 
   if (orders) {
     orders.forEach(order => {
@@ -39,7 +39,7 @@ export default async function BuyerWalletPage() {
           
           transactions.push({
             id: tx.id,
-            productName: Array.isArray(order.product) ? order.product[0]?.name : order.product?.name,
+            productName: Array.isArray(order.product) ? (order.product as any)[0]?.name : (order.product as any)?.name,
             amount: tx.amount,
             status: tx.status,
             date: tx.held_at || order.created_at
