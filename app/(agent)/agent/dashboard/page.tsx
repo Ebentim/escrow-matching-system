@@ -24,10 +24,26 @@ export default async function AgentDashboard() {
     .eq("agent_id", user.id)
     .order("id", { ascending: false });
 
+  // Fetch all orders in escrow
+  const { data: allEscrowOrders } = await supabase
+    .from("orders")
+    .select(`
+      id, quantity_ordered, total_price, created_at,
+      product:products ( name, location ),
+      buyer:users!orders_buyer_id_fkey ( full_name, phone ),
+      farmer:users!orders_farmer_id_fkey ( full_name, phone ),
+      deliveries ( id )
+    `)
+    .eq("status", "in_escrow")
+    .order("created_at", { ascending: false });
+
+  // Filter out those that already have a delivery record
+  const unassignedOrders = allEscrowOrders?.filter(o => !o.deliveries || o.deliveries.length === 0) || [];
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Delivery Agent Dashboard</h1>
-      <AgentDashboardClient deliveries={deliveries || []} />
+      <AgentDashboardClient deliveries={deliveries || []} unassignedOrders={unassignedOrders} />
     </div>
   );
 }

@@ -30,9 +30,10 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
     const res = await payOrder(orderId);
     if (res?.error) {
       await alert(res.error);
+      setLoadingId(null);
+    } else {
+      router.push(`/buyer/orders/${orderId}/tracking`);
     }
-    router.refresh();
-    setLoadingId(null);
   };
 
   const handleCancel = async (orderId: string) => {

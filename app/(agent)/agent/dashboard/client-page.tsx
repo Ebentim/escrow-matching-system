@@ -6,18 +6,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Loader2, MapPin, Truck, CheckCircle, Navigation, KeyRound } from "lucide-react";
-import { markPickedUp, updateAgentLocation, agentVerifyDelivery } from "@/app/actions/delivery";
+import { markPickedUp, updateAgentLocation, agentVerifyDelivery, claimDelivery } from "@/app/actions/delivery";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/components/ui/modal-provider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function AgentDashboardClient({ deliveries: initialDeliveries }: { deliveries: any[] }) {
+export function AgentDashboardClient({ deliveries: initialDeliveries, unassignedOrders }: { deliveries: any[], unassignedOrders: any[] }) {
   const router = useRouter();
   const { alert } = useModal();
   const [deliveries, setDeliveries] = useState(initialDeliveries);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
+
+  const handleClaim = async (orderId: string) => {
+    setLoadingId(`claim-${orderId}`);
+    const res = await claimDelivery(orderId);
+    if (res?.error) {
+      await alert(res.error);
+    } else {
+      await alert("Delivery successfully claimed!");
+      router.refresh();
+    }
+    setLoadingId(null);
+  };
 
   // Auto-start tracking if any delivery is in transit
   useEffect(() => {
@@ -90,26 +102,82 @@ export function AgentDashboardClient({ deliveries: initialDeliveries }: { delive
     setTrackingId(null);
   };
 
-  if (!deliveries || deliveries.length === 0) {
-    return (
-      <Card className="p-12 text-center border-dashed">
-        <p className="text-muted-foreground mb-4">You have no assigned deliveries at the moment.</p>
-      </Card>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      {deliveries.map((delivery) => {
-        const order = delivery.order;
-        const product = order?.product;
-        const farmer = order?.farmer;
-        const buyer = order?.buyer;
-        const isProcessing = loadingId === delivery.id;
-        const isVerifying = loadingId === `verify-${delivery.id}`;
+    <div className="space-y-8">
+      {/* Unassigned / Pending Orders */}
+      {unassignedOrders && unassignedOrders.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-orange-600 flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            Unassigned Orders Available
+          </h2>
+          {unassignedOrders.map((order) => {
+            const product = order?.product;
+            const farmer = order?.farmer;
+            const buyer = order?.buyer;
+            const isProcessingClaim = loadingId === `claim-${order.id}`;
 
-        return (
-          <Card key={delivery.id} className="overflow-hidden">
+            return (
+              <Card key={order.id} className="overflow-hidden border-orange-200 bg-orange-50/30">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-xl">Order #{order.id.split('-')[0]}</h3>
+                      <p className="text-muted-foreground text-sm">Product: {product?.name}</p>
+                    </div>
+                    <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
+                      Unassigned
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-background/50 p-4 rounded-md border border-orange-100">
+                    <div>
+                      <h4 className="font-semibold flex items-center gap-2 mb-2"><MapPin className="w-4 h-4 text-orange-500" /> Pickup (Farmer)</h4>
+                      <p className="text-sm font-medium">{farmer?.full_name}</p>
+                      <p className="text-sm text-muted-foreground">{product?.location}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold flex items-center gap-2 mb-2"><Navigation className="w-4 h-4 text-orange-500" /> Drop-off (Buyer)</h4>
+                      <p className="text-sm font-medium">{buyer?.full_name}</p>
+                      <p className="text-sm text-muted-foreground">See buyer profile for exact address</p>
+                    </div>
+                  </div>
+
+                  <Button 
+                    onClick={() => handleClaim(order.id)} 
+                    disabled={isProcessingClaim}
+                    className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
+                  >
+                    {isProcessingClaim ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Truck className="w-4 h-4 mr-2" />}
+                    Claim Delivery
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Assigned Deliveries */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Truck className="w-5 h-5" />
+          My Deliveries
+        </h2>
+        {(!deliveries || deliveries.length === 0) ? (
+          <Card className="p-12 text-center border-dashed">
+            <p className="text-muted-foreground mb-4">You have no active deliveries.</p>
+          </Card>
+        ) : deliveries.map((delivery) => {
+            const order = delivery.order;
+            const product = order?.product;
+            const farmer = order?.farmer;
+            const buyer = order?.buyer;
+            const isProcessing = loadingId === delivery.id;
+            const isVerifying = loadingId === `verify-${delivery.id}`;
+
+            return (
+              <Card key={delivery.id} className="overflow-hidden">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -178,9 +246,10 @@ export function AgentDashboardClient({ deliveries: initialDeliveries }: { delive
                 )}
               </div>
             </CardContent>
-          </Card>
-        );
-      })}
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }

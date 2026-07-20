@@ -4,6 +4,37 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 
+export async function claimDelivery(orderId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: "Unauthorized" }
+
+  const serviceClient = createServiceClient()
+
+  // Verify order is still unassigned
+  const { data: existingDeliveries } = await serviceClient
+    .from("deliveries")
+    .select("id")
+    .eq("order_id", orderId)
+
+  if (existingDeliveries && existingDeliveries.length > 0) {
+    return { error: "Order has already been claimed or assigned" }
+  }
+
+  // Create delivery record
+  const { error } = await serviceClient.from("deliveries").insert({
+    order_id: orderId,
+    agent_id: user.id,
+    status: 'assigned'
+  })
+
+  if (error) return { error: "Failed to claim delivery" }
+
+  revalidatePath("/agent/dashboard")
+  return { success: true }
+}
+
 export async function markPickedUp(deliveryId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
