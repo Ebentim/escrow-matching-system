@@ -136,7 +136,8 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
   const crypto = require('crypto')
   const inputHash = crypto.createHash('sha256').update(rawOtp).digest('hex')
 
-  const { data: verification, error: vErr } = await supabase
+  const serviceClient = createServiceClient()
+  const { data: verification, error: vErr } = await serviceClient
     .from("delivery_verifications")
     .select("id, code_hash, status, delivery_id, deliveries(order_id)")
     .eq("delivery_id", deliveryId)
