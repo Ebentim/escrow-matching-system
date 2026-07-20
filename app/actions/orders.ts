@@ -36,15 +36,14 @@ export async function placeOrder(
   const newQuantity = Number(product.quantity) - quantity
   const newStatus = newQuantity <= 0 ? 'reserved' : 'available'
 
-  const { error: updateErr } = await supabase
+  const { data: updatedProduct, error: updateErr } = await supabase
     .from("products")
     .update({ quantity: newQuantity, status: newStatus })
     .eq("id", productId)
-    // simplistic optimistic concurrency control
-    .eq("quantity", product.quantity)
+    .select()
 
-  if (updateErr) {
-    return { error: "Could not reserve product. Someone else might have bought it. Try again." }
+  if (updateErr || !updatedProduct || updatedProduct.length === 0) {
+    return { error: "Could not reserve product. Please try again." }
   }
 
   // 3. Create Order
