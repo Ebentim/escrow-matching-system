@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useModal } from "@/components/ui/modal-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { resolveDispute } from "@/app/actions/admin";
 import { Loader2, AlertTriangle, ArrowRightLeft, User, DollarSign } from "lucide-react";
 
-export function DisputesClient({ disputes }: { disputes: any[] }) {
+export function DisputesClient({ disputes: initialDisputes }: { disputes: any[] }) {
+  const [disputes, setDisputes] = useState(initialDisputes);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const { alert } = useModal();
 
   const handleResolve = async (disputeId: string, orderId: string, resolution: string) => {
     const notes = prompt(`Enter resolution notes for deciding to ${resolution.replace('_', ' ')}:`);
@@ -15,8 +18,8 @@ export function DisputesClient({ disputes }: { disputes: any[] }) {
 
     setLoadingId(`resolve-${disputeId}`);
     const result = await resolveDispute(disputeId, orderId, resolution, notes);
-    if (result.error) alert(result.error);
-    else alert("Dispute resolved successfully.");
+    if (result.error) await alert(result.error);
+    else await alert("Dispute resolved successfully.");
     setLoadingId(null);
   };
 

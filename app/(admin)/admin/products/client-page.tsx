@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useModal } from "@/components/ui/modal-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { approveProduct, rejectProduct } from "@/app/actions/admin";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
-export function ProductsClient({ products }: { products: any[] }) {
+export function ProductsClient({ products: initialProducts }: { products: any[] }) {
+  const [products, setProducts] = useState(initialProducts);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const { alert } = useModal();
 
   const handleApprove = async (productId: string) => {
     setLoadingId(`approve-${productId}`);
     const result = await approveProduct(productId);
-    if (result.error) alert(result.error);
+    if (result.error) await alert(result.error);
+    else setProducts((prev) => prev.filter((p) => p.id !== productId));
     setLoadingId(null);
   };
 
@@ -22,7 +26,7 @@ export function ProductsClient({ products }: { products: any[] }) {
 
     setLoadingId(`reject-${productId}`);
     const result = await rejectProduct(productId, reason);
-    if (result.error) alert(result.error);
+    if (result.error) await alert(result.error);
     setLoadingId(null);
   };
 

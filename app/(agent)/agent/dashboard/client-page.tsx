@@ -8,10 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Loader2, MapPin, Truck, CheckCircle, Navigation, KeyRound } from "lucide-react";
 import { markPickedUp, updateAgentLocation, agentVerifyDelivery } from "@/app/actions/delivery";
 import { useRouter } from "next/navigation";
+import { useModal } from "@/components/ui/modal-provider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
+export function AgentDashboardClient({ deliveries: initialDeliveries }: { deliveries: any[] }) {
   const router = useRouter();
+  const { alert } = useModal();
+  const [deliveries, setDeliveries] = useState(initialDeliveries);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
@@ -29,7 +32,7 @@ export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
   const handlePickUp = async (deliveryId: string) => {
     setLoadingId(deliveryId);
     const res = await markPickedUp(deliveryId);
-    if (res?.error) alert(res.error);
+    if (res?.error) await alert(res.error);
     router.refresh();
     setLoadingId(null);
   };
@@ -37,15 +40,15 @@ export function AgentDashboardClient({ deliveries }: { deliveries: any[] }) {
   const handleVerify = async (deliveryId: string) => {
     const otp = otpInputs[deliveryId];
     if (!otp || otp.length < 6) {
-      alert("Please enter the 6-digit verification code");
+      await alert("Please enter the 6-digit verification code");
       return;
     }
     setLoadingId(`verify-${deliveryId}`);
     const res = await agentVerifyDelivery(deliveryId, otp);
     if (res?.error) {
-      alert(res.error);
+      await alert(res.error);
     } else {
-      alert("Delivery verified successfully!");
+      await alert("Delivery verified successfully!");
       router.refresh();
     }
     setLoadingId(null);

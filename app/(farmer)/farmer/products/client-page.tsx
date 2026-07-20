@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useModal } from "@/components/ui/modal-provider";
 import { Product } from "@/lib/types";
 import { useProductStore } from "@/lib/stores/product-store";
 import { ProductForm } from "@/components/farmer/product-form";
@@ -10,6 +12,8 @@ import { deleteProduct } from "../actions";
 import { Plus, Edit, Trash2 } from "lucide-react";
 
 export function ProductsClient({ initialProducts, farmerLocation }: { initialProducts: Product[], farmerLocation: string }) {
+  const router = useRouter();
+  const { alert, confirm } = useModal();
   const { products, setProducts, removeProduct } = useProductStore();
   const [isAdding, setIsAdding] = useState(false);
   const [editingProduct, setEditingProduct] = useState<(Product & { images?: { storage_path: string; is_primary: boolean }[] }) | null>(null);
@@ -20,13 +24,14 @@ export function ProductsClient({ initialProducts, farmerLocation }: { initialPro
   }, [initialProducts, setProducts]);
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to deactivate this product? It will be marked as 'sold' and hidden from buyers.")) {
+    if (await confirm("Are you sure you want to deactivate this product? It will be marked as 'sold' and hidden from buyers.")) {
       setIsDeleting(id);
       const res = await deleteProduct(id);
       if (res.success) {
         removeProduct(id);
+        router.refresh();
       } else {
-        alert(res.error || "Failed to delete product");
+        await alert(res.error || "Failed to delete product");
       }
       setIsDeleting(null);
     }

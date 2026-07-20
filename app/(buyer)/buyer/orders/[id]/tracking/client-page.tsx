@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModal } from "@/components/ui/modal-provider";
 import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,7 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(delivery.current_location);
   const [status, setStatus] = useState<string>(delivery.status);
   const [orderStatus, setOrderStatus] = useState<string>(order.status);
+  const { confirm } = useModal();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
   }, [delivery.id, order.id, supabaseUrl, supabaseAnonKey]);
 
   const handleConfirmReceipt = async () => {
-    if (!confirm("Confirm you have received the delivery in good condition?")) return;
+    if (!(await confirm("Confirm you have received the delivery in good condition?"))) return;
     setLoading(true);
     await buyerConfirmDelivery(order.id);
     setLoading(false);

@@ -10,36 +10,39 @@ import { submitRating } from "@/app/actions/ratings";
 import { Textarea } from "@/components/ui/textarea";
 import { acceptOrder, rejectOrder, cancelOrder } from "@/app/actions/orders";
 import { useRouter } from "next/navigation";
+import { useModal } from "@/components/ui/modal-provider";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function FarmerOrdersClient({ orders }: { orders: any[] }) {
+export function FarmerOrdersClient({ orders: initialOrders }: { orders: any[] }) {
   const router = useRouter();
+  const { alert, confirm } = useModal();
+  const [orders, setOrders] = useState(initialOrders);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{orderId: string, role: string, revieweeId: string} | null>(null);
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
 
   const handleAccept = async (orderId: string) => {
-    setLoadingId(orderId);
+    setLoadingId(`accept-${orderId}`);
     const res = await acceptOrder(orderId);
-    if (res?.error) alert(res.error);
+    if (res?.error) await alert(res.error);
     router.refresh();
     setLoadingId(null);
   };
 
   const handleReject = async (orderId: string) => {
-    if (!confirm("Rejecting will cancel the order and return the reserved quantity to stock. Proceed?")) return;
-    setLoadingId(orderId);
-    const res = await rejectOrder(orderId);
-    if (res?.error) alert(res.error);
+    if (!(await confirm("Rejecting will cancel the order and return the reserved quantity to stock. Proceed?"))) return;
+    setLoadingId(`reject-${orderId}`);
+    const res = await cancelOrder(orderId, 'farmer');
+    if (res?.error) await alert(res.error);
     router.refresh();
     setLoadingId(null);
   };
 
   const handleCancel = async (orderId: string) => {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
-    setLoadingId(orderId);
+    if (!(await confirm("Are you sure you want to cancel this order?"))) return;
+    setLoadingId(`cancel-${orderId}`);
     const res = await cancelOrder(orderId, 'farmer');
-    if (res?.error) alert(res.error);
+    if (res?.error) await alert(res.error);
     router.refresh();
     setLoadingId(null);
   };
@@ -60,18 +63,18 @@ export function FarmerOrdersClient({ orders }: { orders: any[] }) {
       a.remove();
     } catch (e) {
       console.error(e);
-      alert("Failed to download receipt");
+      await alert("Failed to download receipt");
     }
   };
 
   const handleRate = async () => {
     if (!ratingTarget) return;
     setLoadingId(`rating-${ratingTarget.orderId}-${ratingTarget.role}`);
-    const res = await submitRating(ratingTarget.orderId, ratingTarget.revieweeId, ratingForm.rating, ratingForm.comment);
-    if (res.error) {
-      alert(res.error);
+    const res = await submitRating(ratingTarget.orderId, ratingTarget.revieweeId, ratingTarget.role, ratingForm.rating, ratingForm.comment);
+    if (res?.error) {
+      await alert(res.error);
     } else {
-      alert("Rating submitted successfully!");
+      await alert("Rating submitted successfully!");
       setRatingTarget(null);
       setRatingForm({ rating: 5, comment: '' });
       router.refresh();

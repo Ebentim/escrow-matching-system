@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useModal } from "@/components/ui/modal-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +9,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, MoreVertical, ShieldAlert, CheckCircle, Loader2 } from "lucide-react";
 import { toggleUserStatus } from "@/app/actions/admin";
 
-export function UsersClient({ users }: { users: any[] }) {
+export function UsersClient({ users: initialUsers }: { users: any[] }) {
+  const [users, setUsers] = useState(initialUsers);
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const { alert, confirm } = useModal();
 
   const filteredUsers = users.filter((u) => 
     u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -18,19 +21,17 @@ export function UsersClient({ users }: { users: any[] }) {
   );
 
   const handleToggleStatus = async (userId: string, currentStatus: string) => {
-    let reason = "";
-    if (currentStatus === "active") {
-      const res = prompt("Enter reason for suspension:");
-      if (res === null) return;
-      reason = res;
+    if (currentStatus === 'active') {
+      if (!(await confirm("Are you sure you want to suspend this user?"))) return;
     } else {
-      if (!confirm("Are you sure you want to reactivate this user?")) return;
+      if (!(await confirm("Are you sure you want to reactivate this user?"))) return;
     }
 
     setLoadingId(userId);
-    const result = await toggleUserStatus(userId, currentStatus, reason);
+    const result = await toggleUserStatus(userId, currentStatus, "");
+    
     if (result.error) {
-      alert(result.error);
+      await alert(result.error);
     }
     setLoadingId(null);
   };

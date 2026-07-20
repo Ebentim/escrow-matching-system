@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
+import { ModalProvider } from "@/components/ui/modal-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,7 +50,11 @@ export default async function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <Navigation role={role} />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">
+          <ModalProvider>
+            {children}
+          </ModalProvider>
+        </main>
         <Footer />
       </body>
     </html>
