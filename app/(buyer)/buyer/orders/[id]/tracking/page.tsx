@@ -2,7 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { TrackingClientPage } from "./client-page";
 
-export default async function BuyerTrackingPage({ params }: { params: { id: string } }) {
+export default async function BuyerTrackingPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const id = resolvedParams.id;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -21,7 +23,7 @@ export default async function BuyerTrackingPage({ params }: { params: { id: stri
       farmer:users!orders_farmer_id_fkey ( full_name, phone ),
       delivery:deliveries ( id, status, current_location, agent:users!deliveries_agent_id_fkey ( full_name, phone ) )
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("buyer_id", user.id)
     .single();
 
@@ -42,13 +44,22 @@ export default async function BuyerTrackingPage({ params }: { params: { id: stri
     .select("message")
     .eq("user_id", user.id)
     .eq("type", "out_for_delivery")
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .order("created_at", { ascending: false });
 
   let otp = null;
   if (notifications && notifications.length > 0) {
-    const match = notifications[0].message.match(/code is (\d{6})/);
-    if (match) otp = match[1];
+    const notif = notifications.find(n => n.message.includes(id) && n.message.includes("Your verification code is"));
+    if (notif) {
+      const match = notif.message.match(/code is (\d{6})/);
+      if (match) otp = match[1];
+    } else {
+      // Fallback
+      const oldNotif = notifications.find(n => n.message.includes("Your verification code is"));
+      if (oldNotif) {
+        const match = oldNotif.message.match(/code is (\d{6})/);
+        if (match) otp = match[1];
+      }
+    }
   }
 
   return (

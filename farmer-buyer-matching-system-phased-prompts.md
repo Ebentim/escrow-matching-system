@@ -224,14 +224,14 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Each filter (crop type, location, price range, availability) independently narrows results correctly
-- [ ] Combined filters (e.g., crop type + price range + location) return correct intersection of results
-- [ ] Free-text search matches partial and case-insensitive product names
-- [ ] Products pending approval or marked sold never appear in buyer search results
-- [ ] Search response time measured and confirmed under 2 seconds with seed data at 500+ products (extend seed data for this test)
-- [ ] Pagination works correctly at page boundaries (no duplicate/missing items)
-- [ ] Product detail page correctly displays farmer rating and all images
-- [ ] Filter state persists correctly on browser back/forward navigation
+- [x] Each filter (crop type, location, price range, availability) independently narrows results correctly
+- [x] Combined filters (e.g., crop type + price range + location) return correct intersection of results
+- [x] Free-text search matches partial and case-insensitive product names
+- [x] Products pending approval or marked sold never appear in buyer search results
+- [x] Search response time measured and confirmed under 2 seconds with seed data at 500+ products (extend seed data for this test)
+- [x] Pagination works correctly at page boundaries (no duplicate/missing items)
+- [x] Product detail page correctly displays farmer rating and all images
+- [x] Filter state persists correctly on browser back/forward navigation
 
 ---
 
@@ -263,13 +263,13 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Unit tests for the Haversine distance calculation against known coordinate pairs with expected distances
-- [ ] Unit tests for each scoring factor in isolation (proximity, quantity, seasonality, price)
-- [ ] Integration test: given a fixed set of seeded products and a sample buyer request, matching results are ranked in the expected order
-- [ ] Farmer with insufficient quantity is correctly excluded or scored lower per spec
-- [ ] Edge function responds within acceptable latency (<2s) under seed data load
-- [ ] Score breakdown returned in the API response is consistent with the final rank order
-- [ ] Notification is correctly created for a farmer when their product scores above the "high match" threshold
+- [x] Unit tests for the Haversine distance calculation against known coordinate pairs with expected distances
+- [x] Unit tests for each scoring factor in isolation (proximity, quantity, seasonality, price)
+- [x] Integration test: given a fixed set of seeded products and a sample buyer request, matching results are ranked in the expected order
+- [x] Farmer with insufficient quantity is correctly excluded or scored lower per spec
+- [x] Edge function responds within acceptable latency (<2s) under seed data load
+- [x] Score breakdown returned in the API response is consistent with the final rank order
+- [x] Notification is correctly created for a farmer when their product scores above the "high match" threshold
 
 ---
 
@@ -302,14 +302,14 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Order creation correctly reserves product quantity and prevents overselling (test concurrent orders on limited-quantity product)
-- [ ] Farmer accept/reject correctly transitions order status and reverses reservation on reject
-- [ ] Escrow capture correctly moves funds into "held" status and updates order status
-- [ ] Payment credentials are never persisted in plaintext anywhere in the database (verify by schema inspection)
-- [ ] Cancellation before escrow capture requires no refund; cancellation after capture triggers refund path
-- [ ] Order status timeline UI accurately reflects backend status at every transition
-- [ ] Notifications generated correctly at each transition, for the correct recipient
-- [ ] Attempting to place an order for a product with insufficient quantity is rejected with a clear error
+- [x] Order creation correctly reserves product quantity and prevents overselling (test concurrent orders on limited-quantity product)
+- [x] Farmer accept/reject correctly transitions order status and reverses reservation on reject
+- [x] Escrow capture correctly moves funds into "held" status and updates order status
+- [x] Payment credentials are never persisted in plaintext anywhere in the database (verify by schema inspection)
+- [x] Cancellation before escrow capture requires no refund; cancellation after capture triggers refund path
+- [x] Order status timeline UI accurately reflects backend status at every transition
+- [x] Notifications generated correctly at each transition, for the correct recipient
+- [x] Attempting to place an order for a product with insufficient quantity is rejected with a clear error
 
 ---
 
@@ -546,16 +546,16 @@ Requirements:
 ```
 
 ### Testing Requirements
-- [ ] Production deployment accessible via HTTPS with valid certificate
-- [ ] Full user journey smoke test in production: register (each role) -> list
+- [x] Production deployment accessible via HTTPS with valid certificate
+- [x] Full user journey smoke test in production: register (each role) -> list
       product -> approve -> search/match -> order -> escrow -> delivery -> OTP/QR
       verification -> escrow release -> receipt -> ratings — completed without
       manual DB intervention
-- [ ] Uptime monitoring confirmed active and alerting correctly on a simulated outage
-- [ ] Rollback procedure tested against a non-production environment before relying on it
-- [ ] Final requirements traceability check: every functional requirement from the
+- [x] Uptime monitoring confirmed active and alerting correctly on a simulated outage
+- [x] Rollback procedure tested against a non-production environment before relying on it
+- [x] Final requirements traceability check: every functional requirement from the
       original spec mapped to an implemented, tested feature (produce a checklist
       table with pass/fail per requirement)
-- [ ] Final non-functional requirements checklist re-verified in production
+- [x] Final non-functional requirements checklist re-verified in production
       environment (security, performance, usability, reliability, portability,
       maintainability, availability)

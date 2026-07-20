@@ -7,18 +7,21 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { UserRole, NavItem } from "@/lib/types";
 import { logout } from "@/app/(auth)/actions";
+import { NotificationsDropdown } from "./notifications-dropdown";
 
 const navItems: Record<UserRole, NavItem[]> = {
   farmer: [
     { label: "Dashboard", href: "/farmer/dashboard" },
     { label: "My Products", href: "/farmer/products" },
     { label: "Orders", href: "/farmer/orders" },
+    { label: "Wallet", href: "/farmer/wallet" },
     { label: "Profile", href: "/farmer/profile" },
   ],
   buyer: [
     { label: "Dashboard", href: "/buyer/dashboard" },
     { label: "Browse Products", href: "/products" },
     { label: "My Orders", href: "/buyer/orders" },
+    { label: "Wallet", href: "/buyer/wallet" },
     { label: "Profile", href: "/buyer/profile" },
   ],
   agent: [
@@ -84,6 +87,7 @@ export function Navigation({ role }: NavigationProps) {
               <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium capitalize text-muted-foreground">
                 {role}
               </span>
+              <NotificationsDropdown />
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
               </Button>

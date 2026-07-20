@@ -278,3 +278,50 @@ export async function cancelOrder(orderId: string, asRole: 'buyer' | 'farmer') {
   revalidatePath(`/${asRole}/orders`)
   return { success: true }
 }
+
+export async function raiseDispute(orderId: string, reason: string, description: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: "Unauthorized" }
+
+  const { data: order, error: fetchErr } = await supabase
+    .from("orders")
+    .select("status, farmer_id")
+    .eq("id", orderId)
+    .eq("buyer_id", user.id)
+    .single()
+
+  if (fetchErr || !order) return { error: "Order not found" }
+
+  // Update order status to disputed
+  const { error: updateErr } = await supabase
+    .from("orders")
+    .update({ status: 'disputed' })
+    .eq("id", orderId)
+
+  if (updateErr) return { error: "Failed to update order status" }
+
+  // Insert dispute record
+  const { error: insertErr } = await supabase
+    .from("disputes")
+    .insert({
+      order_id: orderId,
+      raised_by: user.id,
+      reason: reason,
+      description: description,
+      status: 'open'
+    })
+
+  if (insertErr) return { error: "Failed to log dispute" }
+
+  const serviceClient = createServiceClient()
+  await serviceClient.from("notifications").insert({
+    user_id: order.farmer_id,
+    type: 'order_disputed',
+    message: `A dispute was raised for an order.`
+  })
+
+  revalidatePath("/buyer/orders")
+  return { success: true }
+}

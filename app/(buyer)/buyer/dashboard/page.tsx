@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { RecommendedProducts } from "./recommended-products"
+import { ActiveDeliveries } from "./active-deliveries"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { redirect } from "next/navigation"
@@ -31,11 +32,18 @@ export default async function BuyerDashboard() {
           <Link href="/buyer/orders">
             <Button variant="outline">My Orders</Button>
           </Link>
+          <Link href="/buyer/wallet">
+            <Button variant="outline">My Wallet</Button>
+          </Link>
           <Link href="/buyer/profile">
             <Button variant="outline">Edit Profile</Button>
           </Link>
         </div>
       </div>
+
+      <section>
+        <ActiveDeliveries userId={user.id} />
+      </section>
 
       <section>
         <h2 className="text-2xl font-semibold mb-4">Recommended for You</h2>
@@ -46,3 +54,4 @@ export default async function BuyerDashboard() {
     </div>
   )
 }
+

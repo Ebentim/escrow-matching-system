@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { payOrder, cancelOrder } from "@/app/actions/orders";
+import { payOrder, cancelOrder, raiseDispute } from "@/app/actions/orders";
 import { Loader2, Package, CheckCircle, Clock, ShieldCheck, XCircle, Truck, Info } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,8 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{orderId: string, role: string, revieweeId: string} | null>(null);
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
+  const [disputeTarget, setDisputeTarget] = useState<string | null>(null);
+  const [disputeForm, setDisputeForm] = useState({ reason: '', description: '' });
 
   const handlePay = async (orderId: string) => {
     setLoadingId(orderId);
@@ -37,6 +39,21 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
     const res = await cancelOrder(orderId, 'buyer');
     if (res?.error) {
       alert(res.error);
+    }
+    router.refresh();
+    setLoadingId(null);
+  };
+
+  const handleDispute = async () => {
+    if (!disputeTarget || !disputeForm.reason) return;
+    setLoadingId(`dispute-${disputeTarget}`);
+    const res = await raiseDispute(disputeTarget, disputeForm.reason, disputeForm.description);
+    if (res?.error) {
+      alert(res.error);
+    } else {
+      alert("Dispute raised successfully. An admin will review it.");
+      setDisputeTarget(null);
+      setDisputeForm({ reason: '', description: '' });
     }
     router.refresh();
     setLoadingId(null);
@@ -191,8 +208,8 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
                     </Link>
                   )}
                   {receiptPath && (
-                    <Button variant="outline" onClick={() => handleDownloadReceipt(receiptPath)}>
-                      <Download className="w-4 h-4 mr-2" /> Download Receipt
+                    <Button variant="default" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleDownloadReceipt(receiptPath)}>
+                      <Download className="w-4 h-4 mr-2" /> Download Digital Receipt
                     </Button>
                   )}
                   {order.status === 'completed' && !hasRatedFarmer && (
@@ -208,6 +225,11 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
                   <Link href={`/products/${order.product_id}`}>
                     <Button variant="outline">View Product</Button>
                   </Link>
+                  {(order.status === 'completed' || order.status === 'in_escrow' || order.status === 'out_for_delivery') && (
+                    <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDisputeTarget(order.id)}>
+                      <XCircle className="w-4 h-4 mr-2" /> Raise Dispute
+                    </Button>
+                  )}
                 </div>
 
                 {ratingTarget?.orderId === order.id && (
@@ -233,6 +255,32 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
                         {loadingId === `rating-${order.id}-${ratingTarget?.role}` ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Submit Rating"}
                       </Button>
                       <Button variant="outline" onClick={() => setRatingTarget(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+
+                {disputeTarget === order.id && (
+                  <div className="mt-4 p-4 border rounded-md bg-red-50 border-red-200">
+                    <h4 className="font-semibold mb-2 text-red-800">Raise a Dispute</h4>
+                    <p className="text-sm text-red-600 mb-3">Only raise a dispute if there is a severe issue with your order (e.g. wrong item, never arrived). This will pause escrow payments until an admin resolves it.</p>
+                    <input 
+                      type="text" 
+                      placeholder="Reason (e.g. Item not delivered)" 
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mb-3"
+                      value={disputeForm.reason}
+                      onChange={e => setDisputeForm({...disputeForm, reason: e.target.value})}
+                    />
+                    <Textarea 
+                      placeholder="Detailed description of the issue..." 
+                      className="mb-3"
+                      value={disputeForm.description}
+                      onChange={e => setDisputeForm({...disputeForm, description: e.target.value})}
+                    />
+                    <div className="flex gap-2">
+                      <Button variant="destructive" onClick={() => handleDispute()} disabled={loadingId === `dispute-${order.id}` || !disputeForm.reason}>
+                        {loadingId === `dispute-${order.id}` ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : "Submit Dispute"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setDisputeTarget(null)}>Cancel</Button>
                     </div>
                   </div>
                 )}

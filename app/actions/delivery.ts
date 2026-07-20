@@ -60,12 +60,12 @@ export async function markPickedUp(deliveryId: string) {
 
   // Notify buyer
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buyerId = (delivery.orders as any)?.buyer_id
+  const buyerId = Array.isArray(delivery.orders) ? delivery.orders[0]?.buyer_id : (delivery.orders as any)?.buyer_id
   if (buyerId) {
     await serviceClient.from("notifications").insert({
       user_id: buyerId,
       type: 'out_for_delivery',
-      message: `Your order is on the way! Your verification code is ${rawOtp}. Present this or its QR code to the agent.`
+      message: `Your order (${delivery.order_id}) is on the way! Your verification code is ${rawOtp}. Present this or its QR code to the agent.`
     })
   }
 

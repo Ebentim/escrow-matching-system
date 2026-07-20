@@ -115,9 +115,9 @@ async function runTests() {
 
   console.log("\n7. Testing pagination logic at boundaries");
   // Page 1 (offset 0, limit 12)
-  let { data: page1 } = await buyerClient.from('products').select('*').eq('status', 'available').order('created_at', { ascending: false }).range(0, 11);
+  let { data: page1 } = await buyerClient.from('products').select('*').eq('status', 'available').order('created_at', { ascending: false }).order('id', { ascending: true }).range(0, 11);
   // Page 2 (offset 12, limit 12)
-  let { data: page2 } = await buyerClient.from('products').select('*').eq('status', 'available').order('created_at', { ascending: false }).range(12, 23);
+  let { data: page2 } = await buyerClient.from('products').select('*').eq('status', 'available').order('created_at', { ascending: false }).order('id', { ascending: true }).range(12, 23);
   
   if (page1!.length !== 12 || page2!.length !== 12) throw new Error("Pagination size mismatch");
   

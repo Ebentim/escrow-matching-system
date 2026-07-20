@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/lib/validators";
-import { login, loginWithOTP, verifyOTP } from "../actions";
+import { login } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,40 +23,12 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  // Phone OTP form
-  const [phone, setPhone] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [token, setToken] = useState("");
-
   const onEmailSubmit = async (data: LoginInput) => {
     setIsPending(true);
     setError(null);
     const res = await login(data);
     if (res?.error) {
       setError(res.error);
-    }
-    setIsPending(false);
-  };
-
-  const onPhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone) return;
-    setIsPending(true);
-    setError(null);
-    
-    if (otpSent) {
-      const res = await verifyOTP(phone, token);
-      if (res?.error) {
-        setError(res.error);
-      }
-    } else {
-      const res = await loginWithOTP(phone);
-      if (res?.error) {
-        setError(res.error);
-      } else {
-        setOtpSent(true);
-        setSuccess(res.success || "OTP sent");
-      }
     }
     setIsPending(false);
   };
@@ -70,8 +42,8 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="email">Email</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-1 mb-6">
+              <TabsTrigger value="email">Sign in with Email</TabsTrigger>
             </TabsList>
 
             {error && (
@@ -114,52 +86,6 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full h-12 text-lg" disabled={isPending}>
                   {isPending ? "Signing in..." : "Sign In"}
                 </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="phone">
-              <form onSubmit={onPhoneSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input 
-                    id="phone" 
-                    type="tel" 
-                    placeholder="+2348000000000"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={otpSent}
-                    className="h-12 text-base"
-                  />
-                </div>
-                
-                {otpSent && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                    <Label htmlFor="token">Verification Code</Label>
-                    <Input 
-                      id="token" 
-                      type="text" 
-                      placeholder="123456"
-                      value={token}
-                      onChange={(e) => setToken(e.target.value)}
-                      className="h-12 text-base text-center tracking-widest font-mono"
-                    />
-                  </div>
-                )}
-                
-                <Button type="submit" className="w-full h-12 text-lg" disabled={isPending || !phone || (otpSent && !token)}>
-                  {isPending ? "Please wait..." : (otpSent ? "Verify Code" : "Send Code")}
-                </Button>
-                
-                {otpSent && (
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    className="w-full text-sm" 
-                    onClick={() => { setOtpSent(false); setToken(""); setError(null); setSuccess(null); }}
-                  >
-                    Use a different number
-                  </Button>
-                )}
               </form>
             </TabsContent>
           </Tabs>
