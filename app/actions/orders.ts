@@ -208,10 +208,11 @@ export async function payOrder(orderId: string) {
     .from("delivery_agent_profiles")
     .select("user_id")
     .eq("availability_status", true)
-    .limit(1)
 
   if (agents && agents.length > 0) {
-    const agentId = agents[0].user_id
+    // Pick a random agent to ensure fair distribution of deliveries
+    const randomIndex = Math.floor(Math.random() * agents.length);
+    const agentId = agents[randomIndex].user_id
     
     // Create delivery record
     await serviceClient.from("deliveries").insert({
