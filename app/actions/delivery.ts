@@ -153,7 +153,6 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
   }
 
   // Mark verification as successful
-  const serviceClient = createServiceClient()
   await serviceClient
     .from("delivery_verifications")
     .update({ status: 'verified', verified_by: user.id, verified_at: new Date().toISOString() })
