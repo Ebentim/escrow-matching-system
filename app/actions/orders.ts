@@ -36,7 +36,8 @@ export async function placeOrder(
   const newQuantity = Number(product.quantity) - quantity
   const newStatus = newQuantity <= 0 ? 'reserved' : 'available'
 
-  const { data: updatedProduct, error: updateErr } = await supabase
+  const serviceClient = createServiceClient()
+  const { data: updatedProduct, error: updateErr } = await serviceClient
     .from("products")
     .update({ quantity: newQuantity, status: newStatus })
     .eq("id", productId)
@@ -63,12 +64,11 @@ export async function placeOrder(
 
   if (orderErr) {
     // Revert product if order creation fails
-    await supabase.from("products").update({ quantity: product.quantity, status: product.status }).eq("id", productId)
+    await serviceClient.from("products").update({ quantity: product.quantity, status: product.status }).eq("id", productId)
     return { error: "Failed to create order" }
   }
 
   // 4. Notify farmer
-  const serviceClient = createServiceClient()
   await serviceClient.from("notifications").insert({
     user_id: farmerId,
     type: 'new_order',
@@ -141,7 +141,8 @@ export async function rejectOrder(orderId: string) {
   // Restore quantity
   const { data: product } = await supabase.from("products").select("quantity").eq("id", order.product_id).single()
   if (product) {
-    await supabase.from("products").update({
+    const serviceClient = createServiceClient()
+    await serviceClient.from("products").update({
       quantity: Number(product.quantity) + Number(order.quantity_ordered),
       status: 'available'
     }).eq("id", order.product_id)
@@ -276,7 +277,8 @@ export async function cancelOrder(orderId: string, asRole: 'buyer' | 'farmer') {
   // Restore quantity
   const { data: product } = await supabase.from("products").select("quantity").eq("id", order.product_id).single()
   if (product) {
-    await supabase.from("products").update({
+    const serviceClient = createServiceClient()
+    await serviceClient.from("products").update({
       quantity: Number(product.quantity) + Number(order.quantity_ordered),
       status: 'available'
     }).eq("id", order.product_id)
