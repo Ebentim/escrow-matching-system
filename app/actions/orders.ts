@@ -208,11 +208,27 @@ export async function payOrder(orderId: string) {
     .from("delivery_agent_profiles")
     .select("user_id")
     .eq("availability_status", true)
+    .order("user_id", { ascending: true })
 
   if (agents && agents.length > 0) {
-    // Pick a random agent to ensure fair distribution of deliveries
-    const randomIndex = Math.floor(Math.random() * agents.length);
-    const agentId = agents[randomIndex].user_id
+    // Implement Round-Robin distribution
+    const { data: lastDelivery } = await supabase
+      .from("deliveries")
+      .select("agent_id")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
+
+    let agentId = agents[0].user_id
+
+    if (lastDelivery) {
+      const lastAgentIndex = agents.findIndex(a => a.user_id === lastDelivery.agent_id)
+      if (lastAgentIndex !== -1) {
+        // Pick the next agent in the list
+        const nextIndex = (lastAgentIndex + 1) % agents.length
+        agentId = agents[nextIndex].user_id
+      }
+    }
     
     // Create delivery record
     await serviceClient.from("deliveries").insert({
