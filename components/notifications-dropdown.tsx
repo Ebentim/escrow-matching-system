@@ -98,14 +98,16 @@ export function NotificationsDropdown() {
         <span className="sr-only">Notifications</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80" align="end">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={handleMarkAsRead}>
-              <Check className="mr-1 h-3 w-3" /> Mark all read
-            </Button>
-          )}
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex items-center justify-between">
+            <span>Notifications</span>
+            {unreadCount > 0 && (
+              <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" onClick={handleMarkAsRead}>
+                <Check className="mr-1 h-3 w-3" /> Mark all read
+              </Button>
+            )}
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup className="max-h-[300px] overflow-auto">
           {notifications.length === 0 ? (
