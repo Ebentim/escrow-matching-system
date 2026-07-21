@@ -23,9 +23,9 @@ export function AgentDashboardClient({ deliveries: initialDeliveries, unassigned
     setLoadingId(`claim-${orderId}`);
     const res = await claimDelivery(orderId);
     if (res?.error) {
-      await alert(res.error);
+      await alert(res.error, "Error");
     } else {
-      await alert("Delivery successfully claimed!");
+      await alert("Delivery successfully claimed!", "Success");
       router.refresh();
     }
     setLoadingId(null);
@@ -44,7 +44,11 @@ export function AgentDashboardClient({ deliveries: initialDeliveries, unassigned
   const handlePickUp = async (deliveryId: string) => {
     setLoadingId(deliveryId);
     const res = await markPickedUp(deliveryId);
-    if (res?.error) await alert(res.error);
+    if (res?.error) {
+      await alert(res.error, "Error");
+    } else {
+      await alert("Delivery marked as picked up successfully!", "Success");
+    }
     router.refresh();
     setLoadingId(null);
   };
@@ -58,9 +62,9 @@ export function AgentDashboardClient({ deliveries: initialDeliveries, unassigned
     setLoadingId(`verify-${deliveryId}`);
     const res = await agentVerifyDelivery(deliveryId, otp);
     if (res?.error) {
-      await alert(res.error);
+      await alert(res.error, "Error");
     } else {
-      await alert("Delivery verified successfully!");
+      await alert("Delivery verified successfully!", "Success");
       router.refresh();
     }
     setLoadingId(null);
