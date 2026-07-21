@@ -116,13 +116,13 @@ export function NotificationsDropdown() {
             notifications.map((notification) => (
               <DropdownMenuItem key={notification.id} className={`flex flex-col items-start p-3 ${!notification.is_read ? 'bg-muted/50' : ''}`}>
                 <div className="flex w-full items-start justify-between gap-2">
-                  <span className="font-medium text-sm capitalize">{notification.type.replace(/_/g, ' ')}</span>
+                  <span className="font-medium text-sm capitalize">{(notification.type || 'Notification').replace(/_/g, ' ')}</span>
                   <span className="text-[10px] text-muted-foreground shrink-0">
                     {new Date(notification.created_at).toLocaleDateString()}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {notification.message}
+                  {notification.message || 'You have a new notification.'}
                 </p>
               </DropdownMenuItem>
             ))
