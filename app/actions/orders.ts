@@ -7,8 +7,7 @@ import { revalidatePath } from "next/cache"
 export async function placeOrder(
   productId: string, 
   farmerId: string, 
-  quantity: number, 
-  pricePerUnit: number
+  quantity: number
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -20,7 +19,7 @@ export async function placeOrder(
   // 1. Fetch product to check availability
   const { data: product, error: productErr } = await supabase
     .from("products")
-    .select("quantity, status")
+    .select("quantity, status, price")
     .eq("id", productId)
     .single()
 
@@ -48,7 +47,7 @@ export async function placeOrder(
   }
 
   // 3. Create Order
-  const totalPrice = quantity * pricePerUnit
+  const totalPrice = quantity * Number(product.price)
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .insert({

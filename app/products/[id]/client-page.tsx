@@ -46,7 +46,7 @@ export function ProductDetailClient({ product, farmer, reviews }: ProductDetailP
     setOrderError("");
     
     try {
-      const result = await placeOrder(product.id, product.farmer_id, orderQuantity, Number(product.price));
+      const result = await placeOrder(product.id, product.farmer_id, orderQuantity);
       
       if (result?.error) {
         setOrderError(result.error);
