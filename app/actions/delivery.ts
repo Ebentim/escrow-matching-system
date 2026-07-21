@@ -78,10 +78,9 @@ export async function markPickedUp(deliveryId: string) {
 
   if (orderErr) return { error: "Failed to update order status" }
 
-  // Phase 8: Generate OTP
-  const rawOtp = Math.floor(100000 + Math.random() * 900000).toString()
-  // Simple hash for prototype (in production, use bcrypt or crypto)
+  // Phase 8: Generate OTP securely
   const crypto = require('crypto')
+  const rawOtp = crypto.randomInt(100000, 999999).toString()
   const codeHash = crypto.createHash('sha256').update(rawOtp).digest('hex')
 
   // Store in delivery_verifications
@@ -139,6 +138,11 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
 
   if (!user) return { error: "Unauthorized" }
 
+  const { data: deliveryCheck } = await supabase.from("deliveries").select("agent_id").eq("id", deliveryId).single()
+  if (deliveryCheck?.agent_id !== user.id) {
+    return { error: "Unauthorized agent for this delivery" }
+  }
+
   // Hash the input OTP
   const crypto = require('crypto')
   const inputHash = crypto.createHash('sha256').update(rawOtp.trim()).digest('hex')
@@ -174,16 +178,8 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orderId = (verification.deliveries as any)?.order_id
   
-  // Check if buyer has also confirmed (order status 'delivered')
-  const { data: order } = await supabase.from("orders").select("status").eq("id", orderId).single()
-  
-  if (order?.status === 'delivered') {
-    // Both confirmed! Release escrow
-    await releaseEscrow(orderId)
-  } else {
-    // Agent confirmed, wait for buyer
-    await serviceClient.from("orders").update({ status: 'verified' }).eq("id", orderId)
-  }
+  // Since the agent verified the OTP provided by the buyer, this serves as buyer authorization.
+  await releaseEscrow(orderId)
 
   revalidatePath("/agent/dashboard")
   revalidatePath("/buyer/orders", "layout")
@@ -202,17 +198,11 @@ export async function buyerConfirmDelivery(orderId: string) {
     return { error: "Order is not ready for confirmation" }
   }
 
-  if (order.status === 'verified') {
-    // Agent already verified OTP. Both confirmed! Release escrow
-    await releaseEscrow(orderId)
-  } else {
-    // Buyer confirmed first, wait for agent
+  if (order.status === 'verified' || order.status === 'out_for_delivery') {
+    // Buyer has confirmed receipt, this serves as authorization.
     const serviceClient = createServiceClient()
-    await serviceClient.from("orders").update({ status: 'delivered' }).eq("id", orderId)
-    // We also update delivery status here to avoid it being stuck 'in_transit' if the system logic allows buyer to force complete.
-    // However, if the agent still needs to verify, they can't if it's 'delivered'.
-    // To satisfy "remained in transit still on the agent's end", we update the delivery status to 'delivered' as well.
     await serviceClient.from("deliveries").update({ status: 'delivered' }).eq("order_id", orderId)
+    await releaseEscrow(orderId)
   }
 
   revalidatePath("/buyer/orders")
@@ -222,6 +212,13 @@ export async function buyerConfirmDelivery(orderId: string) {
 
 async function releaseEscrow(orderId: string) {
   const serviceClient = createServiceClient()
+  
+  // Check if already completed to prevent double-release
+  const { data: existingOrder } = await serviceClient.from("orders").select("status").eq("id", orderId).single()
+  if (existingOrder?.status === 'completed') {
+    return;
+  }
+
   const supabase = await createClient() // keeping for user queries
   // Update order to completed
   await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
