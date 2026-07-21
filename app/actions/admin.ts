@@ -56,6 +56,8 @@ export async function approveProduct(productId: string) {
 
   await logAdminAction(supabase, user.id, 'approve_product', 'products', productId)
   revalidatePath("/admin/products")
+  revalidatePath("/products")
+  revalidatePath(`/products/${productId}`)
 
   return { success: true }
 }

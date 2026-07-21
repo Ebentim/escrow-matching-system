@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { TrackingClientPage } from "./client-page";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function BuyerTrackingPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const id = resolvedParams.id;

@@ -1,0 +1,617 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: e2e.spec.ts >> End-to-End Sales Cycle
+- Location: tests\e2e.spec.ts:4:5
+
+# Error details
+
+```
+Test timeout of 240000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "🌾 FarmConnect" [ref=e4] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: 🌾
+        - generic [ref=e7]: FarmConnect
+      - navigation [ref=e8]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /farmer/dashboard
+        - link "My Products" [ref=e10] [cursor=pointer]:
+          - /url: /farmer/products
+        - link "Orders" [ref=e11] [cursor=pointer]:
+          - /url: /farmer/orders
+        - link "Wallet" [ref=e12] [cursor=pointer]:
+          - /url: /farmer/wallet
+        - link "Profile" [ref=e13] [cursor=pointer]:
+          - /url: /farmer/profile
+      - generic [ref=e14]:
+        - generic [ref=e15]: farmer
+        - button "10 Notifications" [ref=e16]:
+          - img [ref=e17]
+          - generic [ref=e20]: "10"
+          - generic [ref=e21]: Notifications
+        - button "Logout" [ref=e22]
+  - main [ref=e23]:
+    - generic [ref=e24]:
+      - heading "Manage Orders" [level=1] [ref=e25]
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - img "Playwright Tomato 1784600493622" [ref=e30]
+          - generic [ref=e31]:
+            - generic [ref=e32]:
+              - generic [ref=e33]:
+                - heading "Playwright Tomato 1784600493622" [level=3] [ref=e34]
+                - paragraph [ref=e35]: "Buyer: Eben Groceries"
+                - paragraph [ref=e36]:
+                  - img [ref=e37]
+                  - text: "08034567890"
+              - generic [ref=e39]:
+                - img
+                - text: pending
+            - generic [ref=e40]:
+              - generic [ref=e41]:
+                - paragraph [ref=e42]: Quantity Ordered
+                - paragraph [ref=e43]: 10 kg
+              - generic [ref=e44]:
+                - paragraph [ref=e45]: Total Revenue
+                - paragraph [ref=e46]: ₦5000
+              - generic [ref=e47]:
+                - paragraph [ref=e48]: Order Date
+                - paragraph [ref=e49]: 7/20/2026
+            - generic [ref=e50]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e51]:
+              - button "Accept Order" [active] [ref=e52]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e53]:
+                - img
+                - text: Reject
+        - generic [ref=e55]:
+          - img "Playwright Tomato 1784599355105" [ref=e57]
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - heading "Playwright Tomato 1784599355105" [level=3] [ref=e61]
+                - paragraph [ref=e62]: "Buyer: Eben Groceries"
+                - paragraph [ref=e63]:
+                  - img [ref=e64]
+                  - text: "08034567890"
+              - generic [ref=e66]:
+                - img
+                - text: in escrow
+            - generic [ref=e67]:
+              - generic [ref=e68]:
+                - paragraph [ref=e69]: Quantity Ordered
+                - paragraph [ref=e70]: 10 kg
+              - generic [ref=e71]:
+                - paragraph [ref=e72]: Total Revenue
+                - paragraph [ref=e73]: ₦5000
+              - generic [ref=e74]:
+                - paragraph [ref=e75]: Order Date
+                - paragraph [ref=e76]: 7/20/2026
+            - generic [ref=e77]: Payment secured in escrow! Please prepare the goods for delivery agent pickup.
+        - generic [ref=e79]:
+          - img "Playwright Tomato 1784598886840" [ref=e81]
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - heading "Playwright Tomato 1784598886840" [level=3] [ref=e85]
+                - paragraph [ref=e86]: "Buyer: Eben Groceries"
+                - paragraph [ref=e87]:
+                  - img [ref=e88]
+                  - text: "08034567890"
+              - generic [ref=e90]:
+                - img
+                - text: out for delivery
+            - generic [ref=e91]:
+              - generic [ref=e92]:
+                - paragraph [ref=e93]: Quantity Ordered
+                - paragraph [ref=e94]: 10 kg
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: Total Revenue
+                - paragraph [ref=e97]: ₦5000
+              - generic [ref=e98]:
+                - paragraph [ref=e99]: Order Date
+                - paragraph [ref=e100]: 7/20/2026
+            - generic [ref=e101]: Agent has picked up the goods.
+        - generic [ref=e103]:
+          - img "Playwright Tomato 1784597784133" [ref=e105]
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]:
+                - heading "Playwright Tomato 1784597784133" [level=3] [ref=e109]
+                - paragraph [ref=e110]: "Buyer: Eben Groceries"
+                - paragraph [ref=e111]:
+                  - img [ref=e112]
+                  - text: "08034567890"
+              - generic [ref=e114]:
+                - img
+                - text: out for delivery
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - paragraph [ref=e117]: Quantity Ordered
+                - paragraph [ref=e118]: 10 kg
+              - generic [ref=e119]:
+                - paragraph [ref=e120]: Total Revenue
+                - paragraph [ref=e121]: ₦5000
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: Order Date
+                - paragraph [ref=e124]: 7/20/2026
+            - generic [ref=e125]: Agent has picked up the goods.
+        - generic [ref=e127]:
+          - img "Playwright Tomato 1784597252062" [ref=e129]
+          - generic [ref=e130]:
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - heading "Playwright Tomato 1784597252062" [level=3] [ref=e133]
+                - paragraph [ref=e134]: "Buyer: Eben Groceries"
+                - paragraph [ref=e135]:
+                  - img [ref=e136]
+                  - text: "08034567890"
+              - generic [ref=e138]:
+                - img
+                - text: out for delivery
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - paragraph [ref=e141]: Quantity Ordered
+                - paragraph [ref=e142]: 10 kg
+              - generic [ref=e143]:
+                - paragraph [ref=e144]: Total Revenue
+                - paragraph [ref=e145]: ₦5000
+              - generic [ref=e146]:
+                - paragraph [ref=e147]: Order Date
+                - paragraph [ref=e148]: 7/20/2026
+            - generic [ref=e149]: Agent has picked up the goods.
+        - generic [ref=e151]:
+          - img "Playwright Tomato 1784595784771" [ref=e153]
+          - generic [ref=e154]:
+            - generic [ref=e155]:
+              - generic [ref=e156]:
+                - heading "Playwright Tomato 1784595784771" [level=3] [ref=e157]
+                - paragraph [ref=e158]: "Buyer: Eben Groceries"
+                - paragraph [ref=e159]:
+                  - img [ref=e160]
+                  - text: "08034567890"
+              - generic [ref=e162]:
+                - img
+                - text: out for delivery
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - paragraph [ref=e165]: Quantity Ordered
+                - paragraph [ref=e166]: 10 kg
+              - generic [ref=e167]:
+                - paragraph [ref=e168]: Total Revenue
+                - paragraph [ref=e169]: ₦5000
+              - generic [ref=e170]:
+                - paragraph [ref=e171]: Order Date
+                - paragraph [ref=e172]: 7/20/2026
+            - generic [ref=e173]: Agent has picked up the goods.
+        - generic [ref=e175]:
+          - img "Playwright Tomato 1784594912123" [ref=e177]
+          - generic [ref=e178]:
+            - generic [ref=e179]:
+              - generic [ref=e180]:
+                - heading "Playwright Tomato 1784594912123" [level=3] [ref=e181]
+                - paragraph [ref=e182]: "Buyer: Eben Groceries"
+                - paragraph [ref=e183]:
+                  - img [ref=e184]
+                  - text: "08034567890"
+              - generic [ref=e186]:
+                - img
+                - text: in escrow
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - paragraph [ref=e189]: Quantity Ordered
+                - paragraph [ref=e190]: 10 kg
+              - generic [ref=e191]:
+                - paragraph [ref=e192]: Total Revenue
+                - paragraph [ref=e193]: ₦5000
+              - generic [ref=e194]:
+                - paragraph [ref=e195]: Order Date
+                - paragraph [ref=e196]: 7/20/2026
+            - generic [ref=e197]: Payment secured in escrow! Please prepare the goods for delivery agent pickup.
+        - generic [ref=e199]:
+          - img "Playwright Tomato 1784589897517" [ref=e201]
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - heading "Playwright Tomato 1784589897517" [level=3] [ref=e205]
+                - paragraph [ref=e206]: "Buyer: Eben Groceries"
+                - paragraph [ref=e207]:
+                  - img [ref=e208]
+                  - text: "08034567890"
+              - generic [ref=e210]:
+                - img
+                - text: disputed
+            - generic [ref=e211]:
+              - generic [ref=e212]:
+                - paragraph [ref=e213]: Quantity Ordered
+                - paragraph [ref=e214]: 10 kg
+              - generic [ref=e215]:
+                - paragraph [ref=e216]: Total Revenue
+                - paragraph [ref=e217]: ₦5000
+              - generic [ref=e218]:
+                - paragraph [ref=e219]: Order Date
+                - paragraph [ref=e220]: 7/20/2026
+        - generic [ref=e223]:
+          - img "Playwright Tomato 1784588083205" [ref=e225]
+          - generic [ref=e226]:
+            - generic [ref=e227]:
+              - generic [ref=e228]:
+                - heading "Playwright Tomato 1784588083205" [level=3] [ref=e229]
+                - paragraph [ref=e230]: "Buyer: Eben Groceries"
+                - paragraph [ref=e231]:
+                  - img [ref=e232]
+                  - text: "08034567890"
+              - generic [ref=e234]:
+                - img
+                - text: out for delivery
+            - generic [ref=e235]:
+              - generic [ref=e236]:
+                - paragraph [ref=e237]: Quantity Ordered
+                - paragraph [ref=e238]: 10 kg
+              - generic [ref=e239]:
+                - paragraph [ref=e240]: Total Revenue
+                - paragraph [ref=e241]: ₦5000
+              - generic [ref=e242]:
+                - paragraph [ref=e243]: Order Date
+                - paragraph [ref=e244]: 7/20/2026
+            - generic [ref=e245]: Agent has picked up the goods.
+        - generic [ref=e247]:
+          - img "Playwright Tomato 1784587079790" [ref=e249]
+          - generic [ref=e250]:
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - heading "Playwright Tomato 1784587079790" [level=3] [ref=e253]
+                - paragraph [ref=e254]: "Buyer: Eben Groceries"
+                - paragraph [ref=e255]:
+                  - img [ref=e256]
+                  - text: "08034567890"
+              - generic [ref=e258]:
+                - img
+                - text: out for delivery
+            - generic [ref=e259]:
+              - generic [ref=e260]:
+                - paragraph [ref=e261]: Quantity Ordered
+                - paragraph [ref=e262]: 10 kg
+              - generic [ref=e263]:
+                - paragraph [ref=e264]: Total Revenue
+                - paragraph [ref=e265]: ₦5000
+              - generic [ref=e266]:
+                - paragraph [ref=e267]: Order Date
+                - paragraph [ref=e268]: 7/20/2026
+            - generic [ref=e269]: Agent has picked up the goods.
+        - generic [ref=e271]:
+          - img "Playwright Tomato 1784586915481" [ref=e273]
+          - generic [ref=e274]:
+            - generic [ref=e275]:
+              - generic [ref=e276]:
+                - heading "Playwright Tomato 1784586915481" [level=3] [ref=e277]
+                - paragraph [ref=e278]: "Buyer: Eben Groceries"
+                - paragraph [ref=e279]:
+                  - img [ref=e280]
+                  - text: "08034567890"
+              - generic [ref=e282]:
+                - img
+                - text: out for delivery
+            - generic [ref=e283]:
+              - generic [ref=e284]:
+                - paragraph [ref=e285]: Quantity Ordered
+                - paragraph [ref=e286]: 10 kg
+              - generic [ref=e287]:
+                - paragraph [ref=e288]: Total Revenue
+                - paragraph [ref=e289]: ₦5000
+              - generic [ref=e290]:
+                - paragraph [ref=e291]: Order Date
+                - paragraph [ref=e292]: 7/20/2026
+            - generic [ref=e293]: Agent has picked up the goods.
+        - generic [ref=e295]:
+          - img "Playwright Tomato 1784586532624" [ref=e297]
+          - generic [ref=e298]:
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - heading "Playwright Tomato 1784586532624" [level=3] [ref=e301]
+                - paragraph [ref=e302]: "Buyer: Eben Groceries"
+                - paragraph [ref=e303]:
+                  - img [ref=e304]
+                  - text: "08034567890"
+              - generic [ref=e306]:
+                - img
+                - text: out for delivery
+            - generic [ref=e307]:
+              - generic [ref=e308]:
+                - paragraph [ref=e309]: Quantity Ordered
+                - paragraph [ref=e310]: 10 kg
+              - generic [ref=e311]:
+                - paragraph [ref=e312]: Total Revenue
+                - paragraph [ref=e313]: ₦5000
+              - generic [ref=e314]:
+                - paragraph [ref=e315]: Order Date
+                - paragraph [ref=e316]: 7/20/2026
+            - generic [ref=e317]: Agent has picked up the goods.
+        - generic [ref=e319]:
+          - img "Playwright Tomato 1784586408748" [ref=e321]
+          - generic [ref=e322]:
+            - generic [ref=e323]:
+              - generic [ref=e324]:
+                - heading "Playwright Tomato 1784586408748" [level=3] [ref=e325]
+                - paragraph [ref=e326]: "Buyer: Eben Groceries"
+                - paragraph [ref=e327]:
+                  - img [ref=e328]
+                  - text: "08034567890"
+              - generic [ref=e330]:
+                - img
+                - text: accepted
+            - generic [ref=e331]:
+              - generic [ref=e332]:
+                - paragraph [ref=e333]: Quantity Ordered
+                - paragraph [ref=e334]: 10 kg
+              - generic [ref=e335]:
+                - paragraph [ref=e336]: Total Revenue
+                - paragraph [ref=e337]: ₦5000
+              - generic [ref=e338]:
+                - paragraph [ref=e339]: Order Date
+                - paragraph [ref=e340]: 7/20/2026
+            - generic [ref=e341]: Waiting for buyer to complete escrow payment.
+            - button "Cancel Order" [ref=e343]
+        - generic [ref=e345]:
+          - img "Playwright Tomato 1784586289487" [ref=e347]
+          - generic [ref=e348]:
+            - generic [ref=e349]:
+              - generic [ref=e350]:
+                - heading "Playwright Tomato 1784586289487" [level=3] [ref=e351]
+                - paragraph [ref=e352]: "Buyer: Eben Groceries"
+                - paragraph [ref=e353]:
+                  - img [ref=e354]
+                  - text: "08034567890"
+              - generic [ref=e356]:
+                - img
+                - text: accepted
+            - generic [ref=e357]:
+              - generic [ref=e358]:
+                - paragraph [ref=e359]: Quantity Ordered
+                - paragraph [ref=e360]: 10 kg
+              - generic [ref=e361]:
+                - paragraph [ref=e362]: Total Revenue
+                - paragraph [ref=e363]: ₦5000
+              - generic [ref=e364]:
+                - paragraph [ref=e365]: Order Date
+                - paragraph [ref=e366]: 7/20/2026
+            - generic [ref=e367]: Waiting for buyer to complete escrow payment.
+            - button "Cancel Order" [ref=e369]
+        - generic [ref=e371]:
+          - img "Playwright Tomato 1784585930390" [ref=e373]
+          - generic [ref=e374]:
+            - generic [ref=e375]:
+              - generic [ref=e376]:
+                - heading "Playwright Tomato 1784585930390" [level=3] [ref=e377]
+                - paragraph [ref=e378]: "Buyer: Eben Groceries"
+                - paragraph [ref=e379]:
+                  - img [ref=e380]
+                  - text: "08034567890"
+              - generic [ref=e382]:
+                - img
+                - text: pending
+            - generic [ref=e383]:
+              - generic [ref=e384]:
+                - paragraph [ref=e385]: Quantity Ordered
+                - paragraph [ref=e386]: 10 kg
+              - generic [ref=e387]:
+                - paragraph [ref=e388]: Total Revenue
+                - paragraph [ref=e389]: ₦5000
+              - generic [ref=e390]:
+                - paragraph [ref=e391]: Order Date
+                - paragraph [ref=e392]: 7/20/2026
+            - generic [ref=e393]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e394]:
+              - button "Accept Order" [ref=e395]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e396]:
+                - img
+                - text: Reject
+        - generic [ref=e398]:
+          - img "Playwright Tomato 1784584699593" [ref=e400]
+          - generic [ref=e401]:
+            - generic [ref=e402]:
+              - generic [ref=e403]:
+                - heading "Playwright Tomato 1784584699593" [level=3] [ref=e404]
+                - paragraph [ref=e405]: "Buyer: Eben Groceries"
+                - paragraph [ref=e406]:
+                  - img [ref=e407]
+                  - text: "08034567890"
+              - generic [ref=e409]:
+                - img
+                - text: pending
+            - generic [ref=e410]:
+              - generic [ref=e411]:
+                - paragraph [ref=e412]: Quantity Ordered
+                - paragraph [ref=e413]: 10 kg
+              - generic [ref=e414]:
+                - paragraph [ref=e415]: Total Revenue
+                - paragraph [ref=e416]: ₦5000
+              - generic [ref=e417]:
+                - paragraph [ref=e418]: Order Date
+                - paragraph [ref=e419]: 7/20/2026
+            - generic [ref=e420]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e421]:
+              - button "Accept Order" [ref=e422]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e423]:
+                - img
+                - text: Reject
+        - generic [ref=e425]:
+          - img "Playwright Tomato 1784584600946" [ref=e427]
+          - generic [ref=e428]:
+            - generic [ref=e429]:
+              - generic [ref=e430]:
+                - heading "Playwright Tomato 1784584600946" [level=3] [ref=e431]
+                - paragraph [ref=e432]: "Buyer: Eben Groceries"
+                - paragraph [ref=e433]:
+                  - img [ref=e434]
+                  - text: "08034567890"
+              - generic [ref=e436]:
+                - img
+                - text: pending
+            - generic [ref=e437]:
+              - generic [ref=e438]:
+                - paragraph [ref=e439]: Quantity Ordered
+                - paragraph [ref=e440]: 10 kg
+              - generic [ref=e441]:
+                - paragraph [ref=e442]: Total Revenue
+                - paragraph [ref=e443]: ₦5000
+              - generic [ref=e444]:
+                - paragraph [ref=e445]: Order Date
+                - paragraph [ref=e446]: 7/20/2026
+            - generic [ref=e447]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e448]:
+              - button "Accept Order" [ref=e449]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e450]:
+                - img
+                - text: Reject
+        - generic [ref=e452]:
+          - img "Playwright Tomato 1784584077734" [ref=e454]
+          - generic [ref=e455]:
+            - generic [ref=e456]:
+              - generic [ref=e457]:
+                - heading "Playwright Tomato 1784584077734" [level=3] [ref=e458]
+                - paragraph [ref=e459]: "Buyer: Eben Groceries"
+                - paragraph [ref=e460]:
+                  - img [ref=e461]
+                  - text: "08034567890"
+              - generic [ref=e463]:
+                - img
+                - text: pending
+            - generic [ref=e464]:
+              - generic [ref=e465]:
+                - paragraph [ref=e466]: Quantity Ordered
+                - paragraph [ref=e467]: 10 kg
+              - generic [ref=e468]:
+                - paragraph [ref=e469]: Total Revenue
+                - paragraph [ref=e470]: ₦5000
+              - generic [ref=e471]:
+                - paragraph [ref=e472]: Order Date
+                - paragraph [ref=e473]: 7/20/2026
+            - generic [ref=e474]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e475]:
+              - button "Accept Order" [ref=e476]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e477]:
+                - img
+                - text: Reject
+        - generic [ref=e479]:
+          - img "Playwright Tomato 1784583660142" [ref=e481]
+          - generic [ref=e482]:
+            - generic [ref=e483]:
+              - generic [ref=e484]:
+                - heading "Playwright Tomato 1784583660142" [level=3] [ref=e485]
+                - paragraph [ref=e486]: "Buyer: Eben Groceries"
+                - paragraph [ref=e487]:
+                  - img [ref=e488]
+                  - text: "08034567890"
+              - generic [ref=e490]:
+                - img
+                - text: pending
+            - generic [ref=e491]:
+              - generic [ref=e492]:
+                - paragraph [ref=e493]: Quantity Ordered
+                - paragraph [ref=e494]: 10 kg
+              - generic [ref=e495]:
+                - paragraph [ref=e496]: Total Revenue
+                - paragraph [ref=e497]: ₦5000
+              - generic [ref=e498]:
+                - paragraph [ref=e499]: Order Date
+                - paragraph [ref=e500]: 7/20/2026
+            - generic [ref=e501]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e502]:
+              - button "Accept Order" [ref=e503]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e504]:
+                - img
+                - text: Reject
+        - generic [ref=e506]:
+          - img "Playwright Tomato 1784583171948" [ref=e508]
+          - generic [ref=e509]:
+            - generic [ref=e510]:
+              - generic [ref=e511]:
+                - heading "Playwright Tomato 1784583171948" [level=3] [ref=e512]
+                - paragraph [ref=e513]: "Buyer: Eben Groceries"
+                - paragraph [ref=e514]:
+                  - img [ref=e515]
+                  - text: "08034567890"
+              - generic [ref=e517]:
+                - img
+                - text: pending
+            - generic [ref=e518]:
+              - generic [ref=e519]:
+                - paragraph [ref=e520]: Quantity Ordered
+                - paragraph [ref=e521]: 10 kg
+              - generic [ref=e522]:
+                - paragraph [ref=e523]: Total Revenue
+                - paragraph [ref=e524]: ₦5000
+              - generic [ref=e525]:
+                - paragraph [ref=e526]: Order Date
+                - paragraph [ref=e527]: 7/20/2026
+            - generic [ref=e528]: A buyer wants to order this. Please review and accept to proceed to escrow.
+            - generic [ref=e529]:
+              - button "Accept Order" [ref=e530]:
+                - img
+                - text: Accept Order
+              - button "Reject" [ref=e531]:
+                - img
+                - text: Reject
+        - generic [ref=e533]:
+          - generic [ref=e535]: No Image
+          - generic [ref=e536]:
+            - generic [ref=e537]:
+              - generic [ref=e538]:
+                - heading "Fresh Tomatoes (Test)" [level=3] [ref=e539]
+                - paragraph [ref=e540]: "Buyer: Eben Groceries"
+                - paragraph [ref=e541]:
+                  - img [ref=e542]
+                  - text: "08034567890"
+              - generic [ref=e544]:
+                - img
+                - text: out for delivery
+            - generic [ref=e545]:
+              - generic [ref=e546]:
+                - paragraph [ref=e547]: Quantity Ordered
+                - paragraph [ref=e548]: 10 kg
+              - generic [ref=e549]:
+                - paragraph [ref=e550]: Total Revenue
+                - paragraph [ref=e551]: ₦5000
+              - generic [ref=e552]:
+                - paragraph [ref=e553]: Order Date
+                - paragraph [ref=e554]: 7/20/2026
+            - generic [ref=e555]: Agent has picked up the goods.
+  - contentinfo [ref=e556]:
+    - generic [ref=e557]:
+      - paragraph [ref=e558]: © 2026 FarmConnect. Connecting farmers directly with buyers.
+      - navigation [ref=e559]:
+        - link "About" [ref=e560] [cursor=pointer]:
+          - /url: /about
+        - link "Contact" [ref=e561] [cursor=pointer]:
+          - /url: /contact
+        - link "Terms" [ref=e562] [cursor=pointer]:
+          - /url: /terms
+  - button "Open Next.js Dev Tools" [ref=e568] [cursor=pointer]:
+    - img [ref=e569]
+  - alert [ref=e572]
+```

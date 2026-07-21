@@ -112,6 +112,7 @@ export async function acceptOrder(orderId: string) {
   })
 
   revalidatePath("/farmer/orders")
+  revalidatePath("/buyer/orders")
   return { success: true }
 }
 
@@ -203,49 +204,26 @@ export async function payOrder(orderId: string) {
   })
 
   // Phase 7: Delivery Assignment
-  // Find an available agent
+  // Instead of assigning to a specific agent using Round-Robin, we leave the order in 'in_escrow' state.
+  // Agents can view all unassigned orders and claim them manually.
+  
+  // Notify all available agents about the new order (optional but helpful)
   const { data: agents } = await supabase
     .from("delivery_agent_profiles")
     .select("user_id")
     .eq("availability_status", true)
-    .order("user_id", { ascending: true })
 
   if (agents && agents.length > 0) {
-    // Implement Round-Robin distribution
-    const { data: lastDelivery } = await supabase
-      .from("deliveries")
-      .select("agent_id")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-
-    let agentId = agents[0].user_id
-
-    if (lastDelivery) {
-      const lastAgentIndex = agents.findIndex(a => a.user_id === lastDelivery.agent_id)
-      if (lastAgentIndex !== -1) {
-        // Pick the next agent in the list
-        const nextIndex = (lastAgentIndex + 1) % agents.length
-        agentId = agents[nextIndex].user_id
-      }
-    }
-    
-    // Create delivery record
-    await serviceClient.from("deliveries").insert({
-      order_id: orderId,
-      agent_id: agentId,
-      status: 'assigned'
-    })
-    
-    // Notify agent
-    await serviceClient.from("notifications").insert({
-      user_id: agentId,
+    const notifications = agents.map(agent => ({
+      user_id: agent.user_id,
       type: 'delivery_assigned',
-      message: `You have been assigned a new delivery.`
-    })
+      message: `A new order is ready for delivery. Claim it now!`
+    }))
+    await serviceClient.from("notifications").insert(notifications)
   }
 
-  revalidatePath("/buyer/orders")
+  revalidatePath("/buyer/orders", "layout")
+  revalidatePath("/agent/dashboard")
   return { success: true }
 }
 

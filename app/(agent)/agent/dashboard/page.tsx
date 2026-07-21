@@ -10,7 +10,10 @@ export default async function AgentDashboard() {
     redirect("/login");
   }
 
-  const { data: deliveries } = await supabase
+  const { createServiceClient } = await import("@/lib/supabase/service");
+  const serviceClient = createServiceClient();
+
+  const { data: deliveries } = await serviceClient
     .from("deliveries")
     .select(`
       id, status, pickup_time, current_location,
@@ -24,8 +27,7 @@ export default async function AgentDashboard() {
     .eq("agent_id", user.id)
     .order("id", { ascending: false });
 
-  // Fetch all orders in escrow
-  const { data: allEscrowOrders } = await supabase
+  const { data: allEscrowOrders } = await serviceClient
     .from("orders")
     .select(`
       id, quantity_ordered, total_price, created_at,

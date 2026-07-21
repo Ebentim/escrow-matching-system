@@ -51,16 +51,23 @@ export async function markPickedUp(deliveryId: string) {
   if (fetchErr || !delivery) return { error: "Delivery not found" }
   if (delivery.status !== 'assigned') return { error: "Delivery cannot be picked up (wrong status)" }
 
-  // Update delivery status
-  const { error: updateErr } = await supabase
+  // Update delivery status only if it is currently 'assigned'
+  const { data: updatedDelivery, error: updateErr } = await supabase
     .from("deliveries")
     .update({ 
       status: 'in_transit',
       pickup_time: new Date().toISOString()
     })
     .eq("id", deliveryId)
+    .eq("agent_id", user.id) // Ensure security
+    .eq("status", "assigned")
+    .select()
 
-  if (updateErr) return { error: "Failed to update delivery" }
+  if (updateErr) return { error: "Failed to update delivery status" }
+  if (!updatedDelivery || updatedDelivery.length === 0) {
+    // If we didn't update any row, it was likely already picked up by a concurrent request
+    return { success: true } 
+  }
 
   // Update order status
   const serviceClient = createServiceClient()
@@ -90,8 +97,8 @@ export async function markPickedUp(deliveryId: string) {
   if (verifyErr) return { error: "Failed to create verification record" }
 
   // Notify buyer
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buyerId = Array.isArray(delivery.orders) ? delivery.orders[0]?.buyer_id : (delivery.orders as any)?.buyer_id
+  const { data: orderDetails } = await serviceClient.from("orders").select("buyer_id").eq("id", delivery.order_id).single()
+  const buyerId = orderDetails?.buyer_id
   if (buyerId) {
     await serviceClient.from("notifications").insert({
       user_id: buyerId,
@@ -101,7 +108,7 @@ export async function markPickedUp(deliveryId: string) {
   }
 
   revalidatePath("/agent/dashboard")
-  revalidatePath("/buyer/orders")
+  revalidatePath("/buyer/orders", "layout")
   return { success: true }
 }
 
@@ -137,14 +144,17 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
   const inputHash = crypto.createHash('sha256').update(rawOtp).digest('hex')
 
   const serviceClient = createServiceClient()
-  const { data: verification, error: vErr } = await serviceClient
+  const { data: verifications, error: vErr } = await serviceClient
     .from("delivery_verifications")
     .select("id, code_hash, status, delivery_id, deliveries(order_id)")
     .eq("delivery_id", deliveryId)
     .eq("method", "otp")
-    .single()
+    .order("created_at", { ascending: false })
+    .limit(1)
 
-  if (vErr || !verification) return { error: "Verification record not found" }
+  if (vErr || !verifications || verifications.length === 0) return { error: "Verification record not found" }
+  const verification = verifications[0]
+
   if (verification.status === 'verified') return { error: "Already verified" }
 
   if (verification.code_hash !== inputHash) {
@@ -176,6 +186,7 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
   }
 
   revalidatePath("/agent/dashboard")
+  revalidatePath("/buyer/orders", "layout")
   return { success: true }
 }
 
