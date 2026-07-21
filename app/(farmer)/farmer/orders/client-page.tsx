@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { acceptOrder, rejectOrder, cancelOrder } from "@/app/actions/orders";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/components/ui/modal-provider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function FarmerOrdersClient({ orders: initialOrders }: { orders: any[] }) {
@@ -20,6 +21,7 @@ export function FarmerOrdersClient({ orders: initialOrders }: { orders: any[] })
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{orderId: string, role: string, revieweeId: string} | null>(null);
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
+  const [activeTab, setActiveTab] = useState('active');
 
   const handleAccept = async (orderId: string) => {
     setLoadingId(`accept-${orderId}`);
@@ -105,12 +107,23 @@ export function FarmerOrdersClient({ orders: initialOrders }: { orders: any[] })
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {orders.map((order) => {
-        const product = order.products;
-        const buyer = order.buyer?.buyer_profiles;
-        const buyerUser = order.users;
+  const activeOrders = orders.filter(o => ['pending', 'accepted', 'in_escrow', 'out_for_delivery', 'in_transit'].includes(o.status));
+  const historyOrders = orders.filter(o => ['delivered', 'verified', 'completed', 'cancelled', 'disputed'].includes(o.status));
+
+  const renderOrders = (orderList: any[]) => {
+    if (orderList.length === 0) {
+      return (
+        <Card className="p-12 text-center border-dashed mt-4">
+          <p className="text-muted-foreground">No orders found in this category.</p>
+        </Card>
+      );
+    }
+    return (
+      <div className="space-y-4 mt-4">
+        {orderList.map((order) => {
+          const product = order.products;
+          const buyer = order.buyer?.buyer_profiles;
+          const buyerUser = order.users;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mainImage = product.product_images?.find((img: any) => img.is_primary)?.storage_path || product.product_images?.[0]?.storage_path;
         const isProcessing = loadingId === order.id;
@@ -237,6 +250,24 @@ export function FarmerOrdersClient({ orders: initialOrders }: { orders: any[] })
           </Card>
         );
       })}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full grid grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="active">Active Orders</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+          {renderOrders(activeOrders)}
+        </TabsContent>
+        <TabsContent value="history">
+          {renderOrders(historyOrders)}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

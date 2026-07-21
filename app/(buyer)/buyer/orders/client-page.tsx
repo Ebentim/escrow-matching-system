@@ -9,6 +9,7 @@ import { Loader2, Package, CheckCircle, Clock, ShieldCheck, XCircle, Truck, Info
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/components/ui/modal-provider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { createClient } from "@/lib/supabase/client";
 import { Download, Star } from "lucide-react";
@@ -24,6 +25,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
   const [disputeTarget, setDisputeTarget] = useState<string | null>(null);
   const [disputeForm, setDisputeForm] = useState({ reason: '', description: '' });
+  const [activeTab, setActiveTab] = useState('active');
 
   const handlePay = async (orderId: string) => {
     setLoadingId(orderId);
@@ -123,11 +125,22 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {orders.map((order) => {
-        const product = order.products;
-        const farmer = order.farmer?.farmer_profiles;
+  const activeOrders = orders.filter(o => ['pending', 'accepted', 'in_escrow', 'out_for_delivery', 'in_transit'].includes(o.status));
+  const historyOrders = orders.filter(o => ['delivered', 'verified', 'completed', 'cancelled', 'disputed'].includes(o.status));
+
+  const renderOrders = (orderList: any[]) => {
+    if (orderList.length === 0) {
+      return (
+        <Card className="p-12 text-center border-dashed mt-4">
+          <p className="text-muted-foreground">No orders found in this category.</p>
+        </Card>
+      );
+    }
+    return (
+      <div className="space-y-4 mt-4">
+        {orderList.map((order) => {
+          const product = order.products;
+          const farmer = order.farmer?.farmer_profiles;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mainImage = product.product_images?.find((img: any) => img.is_primary)?.storage_path || product.product_images?.[0]?.storage_path;
         const isProcessing = loadingId === order.id;
@@ -292,6 +305,24 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
           </Card>
         );
       })}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full grid grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="active">Active Orders</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active">
+          {renderOrders(activeOrders)}
+        </TabsContent>
+        <TabsContent value="history">
+          {renderOrders(historyOrders)}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

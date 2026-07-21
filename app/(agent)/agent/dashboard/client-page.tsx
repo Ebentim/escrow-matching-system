@@ -9,6 +9,7 @@ import { Loader2, MapPin, Truck, CheckCircle, Navigation, KeyRound } from "lucid
 import { markPickedUp, updateAgentLocation, agentVerifyDelivery, claimDelivery } from "@/app/actions/delivery";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/components/ui/modal-provider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function AgentDashboardClient({ deliveries: initialDeliveries, unassignedOrders }: { deliveries: any[], unassignedOrders: any[] }) {
@@ -18,6 +19,7 @@ export function AgentDashboardClient({ deliveries: initialDeliveries, unassigned
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState('active');
 
   const handleClaim = async (orderId: string) => {
     setLoadingId(`claim-${orderId}`);
@@ -168,11 +170,19 @@ export function AgentDashboardClient({ deliveries: initialDeliveries, unassigned
           <Truck className="w-5 h-5" />
           My Deliveries
         </h2>
-        {(!deliveries || deliveries.length === 0) ? (
-          <Card className="p-12 text-center border-dashed">
-            <p className="text-muted-foreground mb-4">You have no active deliveries.</p>
-          </Card>
-        ) : deliveries.map((delivery) => {
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full grid grid-cols-2 max-w-[400px]">
+            <TabsTrigger value="active">Active Deliveries</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="active" className="mt-4 space-y-4">
+            {(!deliveries || deliveries.filter(d => ['assigned', 'in_transit'].includes(d.status)).length === 0) ? (
+              <Card className="p-12 text-center border-dashed">
+                <p className="text-muted-foreground mb-4">You have no active deliveries.</p>
+              </Card>
+            ) : deliveries.filter(d => ['assigned', 'in_transit'].includes(d.status)).map((delivery) => {
             const order = delivery.order;
             const product = order?.product;
             const farmer = order?.farmer;
@@ -253,6 +263,52 @@ export function AgentDashboardClient({ deliveries: initialDeliveries, unassigned
             </Card>
           );
         })}
+          </TabsContent>
+          
+          <TabsContent value="history" className="mt-4 space-y-4">
+            {(!deliveries || deliveries.filter(d => ['delivered', 'verified', 'completed'].includes(d.status)).length === 0) ? (
+              <Card className="p-12 text-center border-dashed">
+                <p className="text-muted-foreground mb-4">You have no delivery history.</p>
+              </Card>
+            ) : deliveries.filter(d => ['delivered', 'verified', 'completed'].includes(d.status)).map((delivery) => {
+              const order = delivery.order;
+              const product = order?.product;
+              const farmer = order?.farmer;
+              const buyer = order?.buyer;
+              
+              return (
+                <Card key={delivery.id} className="overflow-hidden">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-xl">Delivery #{delivery.id.split('-')[0]}</h3>
+                        <p className="text-muted-foreground text-sm">Product: {product?.name}</p>
+                      </div>
+                      <Badge variant="default" className="bg-green-100 text-green-800 border-green-200 capitalize">
+                        {delivery.status.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-muted/30 p-4 rounded-md">
+                      <div>
+                        <h4 className="font-semibold flex items-center gap-2 mb-2"><MapPin className="w-4 h-4 text-primary" /> Pickup Details (Farmer)</h4>
+                        <p className="text-sm font-medium">{farmer?.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{farmer?.phone}</p>
+                        <p className="text-sm text-muted-foreground">{product?.location}</p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold flex items-center gap-2 mb-2"><Navigation className="w-4 h-4 text-primary" /> Drop-off Details (Buyer)</h4>
+                        <p className="text-sm font-medium">{buyer?.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{buyer?.phone}</p>
+                        <p className="text-sm text-muted-foreground">See buyer profile for exact address</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
