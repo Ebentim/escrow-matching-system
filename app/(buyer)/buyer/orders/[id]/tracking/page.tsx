@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { TrackingClientPage } from "./client-page";
+import { decryptOTP } from "@/lib/otp";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,26 +42,44 @@ export default async function BuyerTrackingPage({ params }: { params: Promise<{ 
 
   const delivery = Array.isArray(order.delivery) ? order.delivery[0] : order.delivery;
 
-  // Phase 8: Fetch OTP from notifications
-  const { data: notifications } = await supabase
-    .from("notifications")
-    .select("message")
-    .eq("user_id", user.id)
-    .eq("type", "out_for_delivery")
-    .order("created_at", { ascending: false });
-
   let otp = null;
-  if (notifications && notifications.length > 0) {
-    const notif = notifications.find(n => n.message.includes(id) && n.message.includes("Your verification code is"));
-    if (notif) {
-      const match = notif.message.match(/code is (\d{6})/);
-      if (match) otp = match[1];
-    } else {
-      // Fallback
-      const oldNotif = notifications.find(n => n.message.includes("Your verification code is"));
-      if (oldNotif) {
-        const match = oldNotif.message.match(/code is (\d{6})/);
+
+  // Try to securely fetch and decrypt OTP from delivery_verifications
+  const { data: verifications } = await serviceClient
+    .from("delivery_verifications")
+    .select("code_hash")
+    .eq("delivery_id", delivery.id)
+    .eq("method", "otp")
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (verifications && verifications.length > 0) {
+    const decrypted = decryptOTP(verifications[0].code_hash);
+    if (decrypted) {
+      otp = decrypted;
+    }
+  }
+
+  // Fallback: Fetch OTP from notifications (for legacy SHA-256 hashed OTPs)
+  if (!otp) {
+    const { data: notifications } = await supabase
+      .from("notifications")
+      .select("message")
+      .eq("user_id", user.id)
+      .eq("type", "out_for_delivery")
+      .order("created_at", { ascending: false });
+
+    if (notifications && notifications.length > 0) {
+      const notif = notifications.find(n => n.message.includes(id) && n.message.includes("Your verification code is"));
+      if (notif) {
+        const match = notif.message.match(/code is (\d{6})/);
         if (match) otp = match[1];
+      } else {
+        const oldNotif = notifications.find(n => n.message.includes("Your verification code is"));
+        if (oldNotif) {
+          const match = oldNotif.message.match(/code is (\d{6})/);
+          if (match) otp = match[1];
+        }
       }
     }
   }

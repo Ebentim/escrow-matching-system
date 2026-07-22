@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
+import { generateOTP, encryptOTP, decryptOTP } from "@/lib/otp"
 
 export async function claimDelivery(orderId: string) {
   const supabase = await createClient()
@@ -79,9 +80,8 @@ export async function markPickedUp(deliveryId: string) {
   if (orderErr) return { error: "Failed to update order status" }
 
   // Phase 8: Generate OTP securely
-  const crypto = require('crypto')
-  const rawOtp = crypto.randomInt(100000, 999999).toString()
-  const codeHash = crypto.createHash('sha256').update(rawOtp).digest('hex')
+  const rawOtp = generateOTP()
+  const codeHash = encryptOTP(rawOtp)
 
   // Store in delivery_verifications
   const { error: verifyErr } = await serviceClient
@@ -143,10 +143,6 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
     return { error: "Unauthorized agent for this delivery" }
   }
 
-  // Hash the input OTP
-  const crypto = require('crypto')
-  const inputHash = crypto.createHash('sha256').update(rawOtp.trim()).digest('hex')
-
   const serviceClient = createServiceClient()
   const { data: verifications, error: vErr } = await serviceClient
     .from("delivery_verifications")
@@ -161,9 +157,21 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
 
   if (verification.status === 'verified') return { error: "Already verified" }
 
-  if (verification.code_hash !== inputHash) {
-    // Log failed attempt logic could go here (e.g. tracking retries in a new column)
-    return { error: "Invalid verification code" }
+  // Check the OTP
+  const decryptedOtp = decryptOTP(verification.code_hash)
+  
+  if (decryptedOtp) {
+    // New symmetrically encrypted OTPs
+    if (decryptedOtp !== rawOtp.trim()) {
+      return { error: "Invalid verification code" }
+    }
+  } else {
+    // Fallback for legacy SHA-256 hashed OTPs
+    const crypto = require('crypto')
+    const inputHash = crypto.createHash('sha256').update(rawOtp.trim()).digest('hex')
+    if (verification.code_hash !== inputHash) {
+      return { error: "Invalid verification code" }
+    }
   }
 
   // Mark verification as successful

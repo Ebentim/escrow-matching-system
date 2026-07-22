@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { decryptOTP } from "@/lib/otp";
 
 export async function ActiveDeliveries({ userId }: { userId: string }) {
   const supabase = await createClient();
@@ -21,7 +23,7 @@ export async function ActiveDeliveries({ userId }: { userId: string }) {
     return null;
   }
 
-  // Fetch notifications for OTP
+  // Fetch notifications for OTP fallback
   const { data: notifications } = await supabase
     .from("notifications")
     .select("message")
@@ -29,13 +31,36 @@ export async function ActiveDeliveries({ userId }: { userId: string }) {
     .eq("type", "out_for_delivery")
     .order("created_at", { ascending: false });
 
+  const serviceClient = createServiceClient();
+  // Fetch all delivery verifications for active deliveries
+  const deliveryIds = activeOrders.map(o => {
+    const d = Array.isArray(o.delivery) ? o.delivery[0] : o.delivery;
+    return d?.id;
+  }).filter(Boolean);
+
+  const { data: allVerifications } = await serviceClient
+    .from("delivery_verifications")
+    .select("delivery_id, code_hash")
+    .in("delivery_id", deliveryIds)
+    .eq("method", "otp");
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold mb-4 text-primary">Active Deliveries & Verification Codes</h2>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {activeOrders.map((order) => {
           let otp = "N/A";
-          if (notifications) {
+          const delivery = Array.isArray(order.delivery) ? order.delivery[0] : order.delivery;
+          
+          if (delivery && allVerifications) {
+            const verif = allVerifications.find(v => v.delivery_id === delivery.id);
+            if (verif) {
+              const decrypted = decryptOTP(verif.code_hash);
+              if (decrypted) otp = decrypted;
+            }
+          }
+
+          if (otp === "N/A" && notifications) {
             // Find notification related to this specific order ID
             const notif = notifications.find(n => n.message.includes(order.id) && n.message.includes("Your verification code is"));
             if (notif) {
