@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 import { generateOTP, encryptOTP, decryptOTP } from "@/lib/otp"
+import crypto from "crypto"
+import PDFDocument from "pdfkit"
 
 export async function claimDelivery(orderId: string) {
   const supabase = await createClient()
@@ -79,32 +81,8 @@ export async function markPickedUp(deliveryId: string) {
 
   if (orderErr) return { error: "Failed to update order status" }
 
-  // Phase 8: Generate OTP securely
-  const rawOtp = generateOTP()
-  const codeHash = encryptOTP(rawOtp)
-
-  // Store in delivery_verifications
-  const { error: verifyErr } = await serviceClient
-    .from("delivery_verifications")
-    .insert({
-      delivery_id: deliveryId,
-      method: 'otp',
-      code_hash: codeHash,
-      status: 'pending'
-    })
-
-  if (verifyErr) return { error: "Failed to create verification record" }
-
-  // Notify buyer
-  const { data: orderDetails } = await serviceClient.from("orders").select("buyer_id").eq("id", delivery.order_id).single()
-  const buyerId = orderDetails?.buyer_id
-  if (buyerId) {
-    await serviceClient.from("notifications").insert({
-      user_id: buyerId,
-      type: 'out_for_delivery',
-      message: `Your order (${delivery.order_id}) is on the way! Your verification code is ${rawOtp}. Present this or its QR code to the agent.`
-    })
-  }
+  const otpResult = await ensurePendingOtpForDelivery(serviceClient, deliveryId, delivery.order_id)
+  if (otpResult.error) return { error: otpResult.error }
 
   revalidatePath("/agent/dashboard")
   revalidatePath("/buyer/orders", "layout")
@@ -138,60 +116,258 @@ export async function agentVerifyDelivery(deliveryId: string, rawOtp: string) {
 
   if (!user) return { error: "Unauthorized" }
 
-  const { data: deliveryCheck } = await supabase.from("deliveries").select("agent_id").eq("id", deliveryId).single()
-  if (deliveryCheck?.agent_id !== user.id) {
+  const serviceClient = createServiceClient()
+  const { data: delivery, error: deliveryErr } = await serviceClient
+    .from("deliveries")
+    .select("id, order_id, agent_id, status, order:orders ( buyer_id )")
+    .eq("id", deliveryId)
+    .single()
+
+  if (deliveryErr || !delivery) {
+    return { error: "Delivery not found" }
+  }
+
+  if (delivery.agent_id !== user.id) {
     return { error: "Unauthorized agent for this delivery" }
   }
 
-  const serviceClient = createServiceClient()
+  if (delivery.status === 'delivered') {
+    return { error: "Already verified" }
+  }
+
+  if (delivery.status !== 'in_transit') {
+    return { error: "Delivery is not ready for OTP verification" }
+  }
+
+  const otp = rawOtp.trim()
   const { data: verifications, error: vErr } = await serviceClient
     .from("delivery_verifications")
-    .select("id, code_hash, status, delivery_id, deliveries(order_id)")
+    .select("id, code_hash, status")
     .eq("delivery_id", deliveryId)
     .eq("method", "otp")
-    .order("created_at", { ascending: false })
-    .limit(1)
+    .eq("status", "pending")
 
-  if (vErr || !verifications || verifications.length === 0) return { error: "Verification record not found" }
-  const verification = verifications[0]
+  if (vErr) {
+    console.error("Failed to load verification record:", vErr)
+    return { error: "Failed to load verification record" }
+  }
 
-  if (verification.status === 'verified') return { error: "Already verified" }
+  let matchedVerificationId: string | null = null
 
-  // Check the OTP
-  const decryptedOtp = decryptOTP(verification.code_hash)
-  
-  if (decryptedOtp) {
-    // New symmetrically encrypted OTPs
-    if (decryptedOtp !== rawOtp.trim()) {
+  if (verifications && verifications.length > 0) {
+    const matchedVerification = verifications.find((verification) =>
+      verificationMatchesOtp(verification.code_hash, otp)
+    )
+
+    if (!matchedVerification) {
       return { error: "Invalid verification code" }
     }
+
+    matchedVerificationId = matchedVerification.id
   } else {
-    // Fallback for legacy SHA-256 hashed OTPs
-    const crypto = require('crypto')
-    const inputHash = crypto.createHash('sha256').update(rawOtp.trim()).digest('hex')
-    if (verification.code_hash !== inputHash) {
-      return { error: "Invalid verification code" }
+    const buyerId = getOrderBuyerId(delivery.order)
+    const matchesNotification = buyerId
+      ? await otpMatchesBuyerNotification(serviceClient, buyerId, delivery.order_id, otp)
+      : false
+
+    if (!matchesNotification) {
+      console.error("Pending OTP verification record not found", { deliveryId, orderId: delivery.order_id })
+      return { error: "Verification record not found" }
     }
+
+    const { data: repairedVerification, error: repairErr } = await serviceClient
+      .from("delivery_verifications")
+      .insert({
+        delivery_id: deliveryId,
+        method: 'otp',
+        code_hash: encryptOTP(otp),
+        verified_by: user.id,
+        verified_at: new Date().toISOString(),
+        status: 'verified'
+      })
+      .select("id")
+      .single()
+
+    if (repairErr || !repairedVerification) {
+      console.error("Failed to repair missing verification record:", repairErr)
+      return { error: "Failed to save verification record" }
+    }
+
+    matchedVerificationId = repairedVerification.id
+  }
+
+  if (!matchedVerificationId) {
+    return { error: "Verification record not found" }
   }
 
   // Mark verification as successful
-  await serviceClient
+  const { error: verifyUpdateErr } = await serviceClient
     .from("delivery_verifications")
     .update({ status: 'verified', verified_by: user.id, verified_at: new Date().toISOString() })
-    .eq("id", verification.id)
+    .eq("id", matchedVerificationId)
+
+  if (verifyUpdateErr) {
+    console.error("Failed to update verification record:", verifyUpdateErr)
+    return { error: "Failed to update verification record" }
+  }
+
+  await serviceClient
+    .from("delivery_verifications")
+    .update({ status: 'failed' })
+    .eq("delivery_id", deliveryId)
+    .eq("method", "otp")
+    .eq("status", "pending")
+    .neq("id", matchedVerificationId)
 
   // Update delivery status using serviceClient to bypass potential RLS restrictions
-  await serviceClient.from("deliveries").update({ status: 'delivered' }).eq("id", deliveryId)
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orderId = (verification.deliveries as any)?.order_id
+  const { error: deliveryUpdateErr } = await serviceClient
+    .from("deliveries")
+    .update({ status: 'delivered' })
+    .eq("id", deliveryId)
   
+  if (deliveryUpdateErr) {
+    console.error("Failed to update delivery status:", deliveryUpdateErr)
+    return { error: "Failed to update delivery status" }
+  }
+
   // Since the agent verified the OTP provided by the buyer, this serves as buyer authorization.
-  await releaseEscrow(orderId)
+  const releaseResult = await releaseEscrow(delivery.order_id)
+  if (releaseResult?.error) {
+    return releaseResult
+  }
 
   revalidatePath("/agent/dashboard")
   revalidatePath("/buyer/orders", "layout")
   return { success: true }
+}
+
+async function ensurePendingOtpForDelivery(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  deliveryId: string,
+  orderId: string
+) {
+  const { data: existingVerifications, error: existingErr } = await serviceClient
+    .from("delivery_verifications")
+    .select("id, code_hash")
+    .eq("delivery_id", deliveryId)
+    .eq("method", "otp")
+    .eq("status", "pending")
+
+  if (existingErr) {
+    console.error("Failed to check existing verification record:", existingErr)
+    return { error: "Failed to check verification record" }
+  }
+
+  const reusableVerification = existingVerifications?.find((verification) => decryptOTP(verification.code_hash))
+  const reusableOtp = reusableVerification ? decryptOTP(reusableVerification.code_hash) : null
+
+  if (reusableOtp) {
+    return { otp: reusableOtp }
+  }
+
+  if (existingVerifications && existingVerifications.length > 0) {
+    const pendingIds = existingVerifications.map((verification) => verification.id)
+    const { error: staleErr } = await serviceClient
+      .from("delivery_verifications")
+      .update({ status: 'failed' })
+      .in("id", pendingIds)
+
+    if (staleErr) {
+      console.error("Failed to retire stale verification records:", staleErr)
+      return { error: "Failed to reset stale verification records" }
+    }
+  }
+
+  const rawOtp = generateOTP()
+  const { error: verifyErr } = await serviceClient
+    .from("delivery_verifications")
+    .insert({
+      delivery_id: deliveryId,
+      method: 'otp',
+      code_hash: encryptOTP(rawOtp),
+      status: 'pending'
+    })
+
+  if (verifyErr) {
+    console.error("Failed to create verification record:", verifyErr)
+    return { error: "Failed to create verification record" }
+  }
+
+  const { data: orderDetails, error: orderErr } = await serviceClient
+    .from("orders")
+    .select("buyer_id")
+    .eq("id", orderId)
+    .single()
+
+  if (orderErr || !orderDetails?.buyer_id) {
+    console.error("Failed to load buyer for OTP notification:", orderErr)
+    return { error: "Failed to notify buyer of verification code" }
+  }
+
+  const { error: notificationErr } = await serviceClient.from("notifications").insert({
+    user_id: orderDetails.buyer_id,
+    type: 'out_for_delivery',
+    message: `Your order (${orderId}) is on the way! Your verification code is ${rawOtp}. Present this or its QR code to the agent.`
+  })
+
+  if (notificationErr) {
+    console.error("Failed to send OTP notification:", notificationErr)
+    return { error: "Failed to notify buyer of verification code" }
+  }
+
+  return { otp: rawOtp }
+}
+
+function verificationMatchesOtp(codeHash: string, rawOtp: string) {
+  const decryptedOtp = decryptOTP(codeHash)
+
+  if (decryptedOtp) {
+    return decryptedOtp === rawOtp
+  }
+
+  const inputHash = crypto.createHash('sha256').update(rawOtp).digest('hex')
+  return codeHash === inputHash
+}
+
+async function otpMatchesBuyerNotification(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  buyerId: string,
+  orderId: string,
+  rawOtp: string
+) {
+  const { data: notifications, error } = await serviceClient
+    .from("notifications")
+    .select("message")
+    .eq("user_id", buyerId)
+    .eq("type", "out_for_delivery")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Failed to load OTP notifications:", error)
+    return false
+  }
+
+  return Boolean(notifications?.some((notification) => {
+    const message = notification.message || ""
+    if (!message.includes(orderId) || !message.includes("Your verification code is")) {
+      return false
+    }
+
+    const match = message.match(/code is (\d{6})/)
+    return match?.[1] === rawOtp
+  }))
+}
+
+function getOrderBuyerId(order: unknown) {
+  if (Array.isArray(order)) {
+    return order[0]?.buyer_id
+  }
+
+  if (order && typeof order === "object" && "buyer_id" in order) {
+    return (order as { buyer_id?: string }).buyer_id
+  }
+
+  return null
 }
 
 export async function buyerConfirmDelivery(orderId: string) {
@@ -209,8 +385,18 @@ export async function buyerConfirmDelivery(orderId: string) {
   if (order.status === 'verified' || order.status === 'out_for_delivery') {
     // Buyer has confirmed receipt, this serves as authorization.
     const serviceClient = createServiceClient()
-    await serviceClient.from("deliveries").update({ status: 'delivered' }).eq("order_id", orderId)
-    await releaseEscrow(orderId)
+    const { error: deliveryErr } = await serviceClient
+      .from("deliveries")
+      .update({ status: 'delivered' })
+      .eq("order_id", orderId)
+
+    if (deliveryErr) {
+      console.error("Failed to update delivery status:", deliveryErr)
+      return { error: "Failed to update delivery status" }
+    }
+
+    const releaseResult = await releaseEscrow(orderId)
+    if (releaseResult?.error) return releaseResult
   }
 
   revalidatePath("/buyer/orders")
@@ -219,20 +405,41 @@ export async function buyerConfirmDelivery(orderId: string) {
 }
 
 async function releaseEscrow(orderId: string) {
+  if (!orderId) {
+    console.error("Cannot release escrow without an order id")
+    return { error: "Order not found" }
+  }
+
   const serviceClient = createServiceClient()
   
   // Check if already completed to prevent double-release
-  const { data: existingOrder } = await serviceClient.from("orders").select("status").eq("id", orderId).single()
-  if (existingOrder?.status === 'completed') {
-    return;
+  const { data: existingOrder, error: existingOrderErr } = await serviceClient.from("orders").select("status").eq("id", orderId).single()
+  if (existingOrderErr || !existingOrder) {
+    console.error("Failed to load order before escrow release:", existingOrderErr)
+    return { error: "Order not found" }
   }
 
-  const supabase = await createClient() // keeping for user queries
+  if (existingOrder?.status === 'completed') {
+    return { success: true };
+  }
+
   // Update order to completed
-  await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
+  const { error: orderErr } = await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
+  if (orderErr) {
+    console.error("Failed to complete order:", orderErr)
+    return { error: "Failed to complete order" }
+  }
   
   // Update escrow to released
-  await serviceClient.from("escrow_transactions").update({ status: 'released', released_at: new Date().toISOString() }).eq("order_id", orderId)
+  const { error: escrowErr } = await serviceClient
+    .from("escrow_transactions")
+    .update({ status: 'released', released_at: new Date().toISOString() })
+    .eq("order_id", orderId)
+
+  if (escrowErr) {
+    console.error("Failed to release escrow:", escrowErr)
+    return { error: "Failed to release escrow" }
+  }
   
   // Fetch order data for receipt
   const { data: order } = await serviceClient.from("orders").select(`
@@ -264,12 +471,12 @@ async function releaseEscrow(orderId: string) {
       console.error("Failed to generate receipt:", e);
     }
   }
+
+  return { success: true }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateReceipt(order: any, supabase: any) {
-  const PDFDocument = require('pdfkit');
-
   return new Promise<void>((resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 50 });

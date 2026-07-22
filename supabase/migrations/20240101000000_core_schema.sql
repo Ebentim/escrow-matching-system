@@ -114,7 +114,8 @@ CREATE TABLE delivery_verifications (
     code_hash TEXT NOT NULL,
     verified_by UUID REFERENCES users(id) ON DELETE SET NULL,
     verified_at TIMESTAMPTZ,
-    status verification_status DEFAULT 'pending'
+    status verification_status DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Receipts

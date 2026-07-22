@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { redirect } from "next/navigation";
 import { TrackingClientPage } from "./client-page";
 import { decryptOTP } from "@/lib/otp";
@@ -17,7 +18,6 @@ export default async function BuyerTrackingPage({ params }: { params: Promise<{ 
   }
 
   // Get order and delivery info using service role to bypass complex nested RLS joins
-  const { createServiceClient } = require("@/lib/supabase/service");
   const serviceClient = createServiceClient();
   const { data: order } = await serviceClient
     .from("orders")
@@ -50,7 +50,7 @@ export default async function BuyerTrackingPage({ params }: { params: Promise<{ 
     .select("code_hash")
     .eq("delivery_id", delivery.id)
     .eq("method", "otp")
-    .order("created_at", { ascending: false })
+    .eq("status", "pending")
     .limit(1);
 
   if (verifications && verifications.length > 0) {
