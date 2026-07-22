@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 // Haversine distance in km
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -124,8 +125,9 @@ export async function POST(req: Request) {
     // Notify farmer of top match if score >= 80
     if (scoredProducts.length > 0 && scoredProducts[0].matchScore >= 80) {
       const topMatch = scoredProducts[0];
+      const serviceClient = createServiceClient();
       // Insert notification
-      await supabase.from('notifications').insert({
+      await serviceClient.from('notifications').insert({
         user_id: topMatch.farmer_id,
         type: 'high_match',
         message: `Your product ${topMatch.name} is highly matched with an active buyer searching for ${cropType}.`

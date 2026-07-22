@@ -125,7 +125,7 @@ export function BuyerOrdersClient({ orders }: { orders: any[] }) {
     );
   }
 
-  const activeOrders = orders.filter(o => ['pending', 'accepted', 'in_escrow', 'out_for_delivery', 'in_transit'].includes(o.status));
+  const activeOrders = orders.filter(o => ['pending', 'accepted', 'in_escrow', 'out_for_delivery'].includes(o.status));
   const historyOrders = orders.filter(o => ['delivered', 'verified', 'completed', 'cancelled', 'disputed'].includes(o.status));
 
   const renderOrders = (orderList: any[]) => {

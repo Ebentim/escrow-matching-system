@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Enums
 CREATE TYPE user_role AS ENUM ('farmer', 'buyer', 'agent', 'admin');
-CREATE TYPE product_status AS ENUM ('pending_approval', 'available', 'reserved', 'sold');
+CREATE TYPE product_status AS ENUM ('pending_approval', 'available', 'reserved', 'sold', 'rejected');
 CREATE TYPE order_status AS ENUM ('pending', 'accepted', 'in_escrow', 'out_for_delivery', 'delivered', 'verified', 'completed', 'disputed', 'cancelled');
 CREATE TYPE escrow_status AS ENUM ('held', 'released', 'refunded');
 CREATE TYPE delivery_status AS ENUM ('assigned', 'picked_up', 'in_transit', 'delivered');
@@ -146,6 +146,7 @@ CREATE TABLE disputes (
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     raised_by UUID NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     reason TEXT NOT NULL,
+    description TEXT,
     status dispute_status DEFAULT 'open',
     resolution_notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()

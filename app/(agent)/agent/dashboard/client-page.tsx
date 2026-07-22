@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +16,10 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
   const router = useRouter();
   const { alert } = useModal();
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [trackingId, setTrackingId] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('active');
+  const trackingIdRef = useRef<string | null>(null);
+  const trackingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleClaim = async (orderId: string) => {
     setLoadingId(`claim-${orderId}`);
@@ -31,16 +32,6 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
     }
     setLoadingId(null);
   };
-
-  // Auto-start tracking if any delivery is in transit
-  useEffect(() => {
-    const activeDelivery = deliveries.find(d => d.status === 'in_transit');
-    if (activeDelivery) {
-      startTracking(activeDelivery.id);
-    } else {
-      stopTracking();
-    }
-  }, [deliveries]);
 
   const handlePickUp = async (deliveryId: string) => {
     setLoadingId(deliveryId);
@@ -71,9 +62,21 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
     setLoadingId(null);
   };
 
-  const startTracking = (deliveryId: string) => {
-    if (trackingId) return;
-    setTrackingId(deliveryId);
+  const stopTracking = useCallback(() => {
+    if (trackingIntervalRef.current) {
+      clearInterval(trackingIntervalRef.current);
+      trackingIntervalRef.current = null;
+    }
+    trackingIdRef.current = null;
+  }, []);
+
+  const startTracking = useCallback((deliveryId: string) => {
+    if (trackingIntervalRef.current && trackingIdRef.current === deliveryId) return;
+    if (trackingIntervalRef.current) {
+      clearInterval(trackingIntervalRef.current);
+    }
+
+    trackingIdRef.current = deliveryId;
     
     // Simulate periodic location updates
     const updateLocation = () => {
@@ -97,15 +100,22 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
 
     // Update immediately and then every 30 seconds
     updateLocation();
-    (window as any).trackingInterval = setInterval(updateLocation, 30000);
-  };
+    trackingIntervalRef.current = setInterval(updateLocation, 30000);
+  }, []);
 
-  const stopTracking = () => {
-    if ((window as any).trackingInterval) {
-      clearInterval((window as any).trackingInterval);
+  // Auto-start tracking if any delivery is in transit
+  useEffect(() => {
+    const activeDelivery = deliveries.find(d => d.status === 'in_transit');
+    if (activeDelivery) {
+      startTracking(activeDelivery.id);
+    } else {
+      stopTracking();
     }
-    setTrackingId(null);
-  };
+  }, [deliveries, startTracking, stopTracking]);
+
+  useEffect(() => {
+    return () => stopTracking();
+  }, [stopTracking]);
 
   return (
     <div className="space-y-8">
@@ -177,11 +187,11 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
           </TabsList>
           
           <TabsContent value="active" className="mt-4 space-y-4">
-            {(!deliveries || deliveries.filter(d => ['assigned', 'in_transit'].includes(d.status)).length === 0) ? (
+            {(!deliveries || deliveries.filter(d => ['assigned', 'picked_up', 'in_transit'].includes(d.status)).length === 0) ? (
               <Card className="p-12 text-center border-dashed">
                 <p className="text-muted-foreground mb-4">You have no active deliveries.</p>
               </Card>
-            ) : deliveries.filter(d => ['assigned', 'in_transit'].includes(d.status)).map((delivery) => {
+            ) : deliveries.filter(d => ['assigned', 'picked_up', 'in_transit'].includes(d.status)).map((delivery) => {
             const order = delivery.order;
             const product = order?.product;
             const farmer = order?.farmer;
@@ -219,10 +229,10 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap gap-3">
-                  {delivery.status === 'assigned' && (
+                  {(delivery.status === 'assigned' || delivery.status === 'picked_up') && (
                     <Button onClick={() => handlePickUp(delivery.id)} disabled={isProcessing}>
                       {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Truck className="w-4 h-4 mr-2" />}
-                      Mark as Picked Up
+                      {delivery.status === 'picked_up' ? 'Start Transit' : 'Mark as Picked Up'}
                     </Button>
                   )}
                   {delivery.status === 'in_transit' && (
@@ -265,11 +275,11 @@ export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliver
           </TabsContent>
           
           <TabsContent value="history" className="mt-4 space-y-4">
-            {(!deliveries || deliveries.filter(d => ['delivered', 'verified', 'completed'].includes(d.status)).length === 0) ? (
+            {(!deliveries || deliveries.filter(d => d.status === 'delivered').length === 0) ? (
               <Card className="p-12 text-center border-dashed">
                 <p className="text-muted-foreground mb-4">You have no delivery history.</p>
               </Card>
-            ) : deliveries.filter(d => ['delivered', 'verified', 'completed'].includes(d.status)).map((delivery) => {
+            ) : deliveries.filter(d => d.status === 'delivered').map((delivery) => {
               const order = delivery.order;
               const product = order?.product;
               const farmer = order?.farmer;

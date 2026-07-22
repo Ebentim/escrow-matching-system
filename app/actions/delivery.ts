@@ -52,7 +52,7 @@ export async function markPickedUp(deliveryId: string) {
     .single()
 
   if (fetchErr || !delivery) return { error: "Delivery not found" }
-  if (delivery.status !== 'assigned') return { error: "Delivery cannot be picked up (wrong status)" }
+  if (delivery.status !== 'assigned' && delivery.status !== 'picked_up') return { error: "Delivery cannot be picked up (wrong status)" }
 
   // Update delivery status only if it is currently 'assigned'
   const { data: updatedDelivery, error: updateErr } = await supabase
@@ -63,7 +63,7 @@ export async function markPickedUp(deliveryId: string) {
     })
     .eq("id", deliveryId)
     .eq("agent_id", user.id) // Ensure security
-    .eq("status", "assigned")
+    .in("status", ["assigned", "picked_up"])
     .select()
 
   if (updateErr) return { error: "Failed to update delivery status" }
@@ -376,28 +376,43 @@ export async function buyerConfirmDelivery(orderId: string) {
 
   if (!user) return { error: "Unauthorized" }
 
-  const { data: order } = await supabase.from("orders").select("status").eq("id", orderId).single()
+  const serviceClient = createServiceClient()
+  const { data: order } = await supabase.from("orders").select("status").eq("id", orderId).eq("buyer_id", user.id).single()
   
-  if (!order || (order.status !== 'out_for_delivery' && order.status !== 'verified')) {
+  if (!order || order.status !== 'out_for_delivery') {
     return { error: "Order is not ready for confirmation" }
   }
 
-  if (order.status === 'verified' || order.status === 'out_for_delivery') {
-    // Buyer has confirmed receipt, this serves as authorization.
-    const serviceClient = createServiceClient()
-    const { error: deliveryErr } = await serviceClient
+  const { data: delivery, error: deliveryErr } = await serviceClient
+    .from("deliveries")
+    .select("id, status, delivery_verifications!inner(id)")
+    .eq("order_id", orderId)
+    .eq("delivery_verifications.status", "verified")
+    .maybeSingle()
+
+  if (deliveryErr) {
+    console.error("Failed to check OTP verification before buyer confirmation:", deliveryErr)
+    return { error: "Failed to check delivery verification" }
+  }
+
+  if (!delivery) {
+    return { error: "Delivery must be OTP verified before escrow can be released" }
+  }
+
+  if (delivery.status !== 'delivered') {
+    const { error: deliveryUpdateErr } = await serviceClient
       .from("deliveries")
       .update({ status: 'delivered' })
-      .eq("order_id", orderId)
+      .eq("id", delivery.id)
 
-    if (deliveryErr) {
-      console.error("Failed to update delivery status:", deliveryErr)
+    if (deliveryUpdateErr) {
+      console.error("Failed to update delivery status:", deliveryUpdateErr)
       return { error: "Failed to update delivery status" }
     }
-
-    const releaseResult = await releaseEscrow(orderId)
-    if (releaseResult?.error) return releaseResult
   }
+
+  const releaseResult = await releaseEscrow(orderId)
+  if (releaseResult?.error) return releaseResult
 
   revalidatePath("/buyer/orders")
   revalidatePath("/agent/dashboard")
@@ -419,26 +434,47 @@ async function releaseEscrow(orderId: string) {
     return { error: "Order not found" }
   }
 
-  if (existingOrder?.status === 'completed') {
-    return { success: true };
+  const { data: escrow, error: escrowFetchErr } = await serviceClient
+    .from("escrow_transactions")
+    .select("id, status")
+    .eq("order_id", orderId)
+    .maybeSingle()
+
+  if (escrowFetchErr) {
+    console.error("Failed to load escrow before release:", escrowFetchErr)
+    return { error: "Failed to load escrow" }
+  }
+
+  if (!escrow) {
+    console.error("Cannot release escrow because no escrow transaction exists", { orderId })
+    return { error: "Escrow transaction not found" }
+  }
+
+  if (existingOrder.status === 'completed' && escrow.status === 'released') {
+    return { success: true }
+  }
+
+  if (escrow.status !== 'released') {
+    const { data: releasedEscrow, error: escrowErr } = await serviceClient
+      .from("escrow_transactions")
+      .update({ status: 'released', released_at: new Date().toISOString() })
+      .eq("id", escrow.id)
+      .select("id")
+      .single()
+
+    if (escrowErr || !releasedEscrow) {
+      console.error("Failed to release escrow:", escrowErr)
+      return { error: "Failed to release escrow" }
+    }
   }
 
   // Update order to completed
-  const { error: orderErr } = await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
-  if (orderErr) {
-    console.error("Failed to complete order:", orderErr)
-    return { error: "Failed to complete order" }
-  }
-  
-  // Update escrow to released
-  const { error: escrowErr } = await serviceClient
-    .from("escrow_transactions")
-    .update({ status: 'released', released_at: new Date().toISOString() })
-    .eq("order_id", orderId)
-
-  if (escrowErr) {
-    console.error("Failed to release escrow:", escrowErr)
-    return { error: "Failed to release escrow" }
+  if (existingOrder.status !== 'completed') {
+    const { error: orderErr } = await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
+    if (orderErr) {
+      console.error("Failed to complete order:", orderErr)
+      return { error: "Failed to complete order" }
+    }
   }
   
   // Fetch order data for receipt
@@ -471,6 +507,9 @@ async function releaseEscrow(orderId: string) {
       console.error("Failed to generate receipt:", e);
     }
   }
+
+  revalidatePath("/buyer/wallet")
+  revalidatePath("/farmer/wallet")
 
   return { success: true }
 }

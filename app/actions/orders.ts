@@ -176,25 +176,49 @@ export async function payOrder(orderId: string) {
   if (fetchErr || !order) return { error: "Order not found" }
   if (order.status !== 'accepted') return { error: "Order is not ready for payment" }
 
-  // Insert into escrow
   const serviceClient = createServiceClient()
-  const { error: escrowErr } = await serviceClient
+  let createdEscrowId: string | null = null
+  const { data: existingEscrow, error: existingEscrowErr } = await serviceClient
     .from("escrow_transactions")
-    .insert({
-      order_id: orderId,
-      amount: order.total_price,
-      status: 'held'
-    })
+    .select("id, status")
+    .eq("order_id", orderId)
+    .maybeSingle()
 
-  if (escrowErr) return { error: "Failed to capture payment to escrow" }
+  if (existingEscrowErr) return { error: "Failed to check escrow status" }
+
+  if (!existingEscrow) {
+    const { data: escrow, error: escrowErr } = await serviceClient
+      .from("escrow_transactions")
+      .insert({
+        order_id: orderId,
+        amount: order.total_price,
+        status: 'held'
+      })
+      .select("id")
+      .single()
+
+    if (escrowErr || !escrow) return { error: "Failed to capture payment to escrow" }
+    createdEscrowId = escrow.id
+  } else if (existingEscrow.status === 'released') {
+    return { error: "Order payment has already been released" }
+  }
 
   // Update order status
-  const { error: updateErr } = await supabase
+  const { data: updatedOrder, error: updateErr } = await serviceClient
     .from("orders")
     .update({ status: 'in_escrow' })
     .eq("id", orderId)
+    .eq("status", "accepted")
+    .select("id")
+    .single()
 
-  if (updateErr) return { error: "Failed to update order status" }
+  if (updateErr || !updatedOrder) {
+    if (createdEscrowId) {
+      await serviceClient.from("escrow_transactions").delete().eq("id", createdEscrowId)
+    }
+
+    return { error: "Failed to update order status" }
+  }
 
   await serviceClient.from("notifications").insert({
     user_id: order.farmer_id,
@@ -222,6 +246,8 @@ export async function payOrder(orderId: string) {
   }
 
   revalidatePath("/buyer/orders", "layout")
+  revalidatePath("/buyer/wallet")
+  revalidatePath("/farmer/wallet")
   revalidatePath("/agent/dashboard")
   return { success: true }
 }

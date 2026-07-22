@@ -2,7 +2,7 @@
 
 export type UserRole = "farmer" | "buyer" | "agent" | "admin";
 
-export type ProductStatus = "pending_approval" | "available" | "reserved" | "sold";
+export type ProductStatus = "pending_approval" | "available" | "reserved" | "sold" | "rejected";
 
 export type OrderStatus =
   | "pending"

@@ -6,10 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, MoreVertical, ShieldAlert, CheckCircle, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { toggleUserStatus } from "@/app/actions/admin";
 
-export function UsersClient({ users }: { users: any[] }) {
+type AdminUser = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string;
+  is_active: boolean | null;
+  created_at: string;
+};
+
+export function UsersClient({ users }: { users: AdminUser[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { alert, confirm } = useModal();
@@ -67,7 +76,10 @@ export function UsersClient({ users }: { users: any[] }) {
                   <td colSpan={6} className="h-24 text-center text-muted-foreground">No users found.</td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                filteredUsers.map((user) => {
+                  const accountStatus = user.is_active ? "active" : "suspended";
+
+                  return (
                   <tr key={user.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                     <td className="p-4 align-middle font-medium">{user.full_name}</td>
                     <td className="p-4 align-middle text-muted-foreground">{user.email}</td>
@@ -75,8 +87,8 @@ export function UsersClient({ users }: { users: any[] }) {
                       <Badge variant="outline" className="capitalize">{user.role}</Badge>
                     </td>
                     <td className="p-4 align-middle">
-                      <Badge variant={user.account_status === "active" ? "default" : "destructive"} className="capitalize">
-                        {user.account_status}
+                      <Badge variant={accountStatus === "active" ? "default" : "destructive"} className="capitalize">
+                        {accountStatus}
                       </Badge>
                     </td>
                     <td className="p-4 align-middle text-muted-foreground">
@@ -84,14 +96,14 @@ export function UsersClient({ users }: { users: any[] }) {
                     </td>
                     <td className="p-4 align-middle text-right">
                       <Button 
-                        variant={user.account_status === "active" ? "destructive" : "outline"} 
+                        variant={accountStatus === "active" ? "destructive" : "outline"}
                         size="sm"
-                        onClick={() => handleToggleStatus(user.id, user.account_status)}
+                        onClick={() => handleToggleStatus(user.id, accountStatus)}
                         disabled={loadingId === user.id || user.role === 'admin'}
                       >
                         {loadingId === user.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : user.account_status === "active" ? (
+                        ) : accountStatus === "active" ? (
                           <>Suspend</>
                         ) : (
                           <>Reactivate</>
@@ -99,7 +111,8 @@ export function UsersClient({ users }: { users: any[] }) {
                       </Button>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

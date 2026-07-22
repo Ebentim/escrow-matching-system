@@ -21,11 +21,16 @@ export async function login(data: LoginInput) {
   // Fetch user role for redirect
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, is_active")
     .eq("id", authData.user?.id)
     .single();
 
   if (userData) {
+    if (!userData.is_active) {
+      await supabase.auth.signOut();
+      return { error: "Your account has been suspended. Please contact support." };
+    }
+
     revalidatePath("/", "layout");
     redirect(`/${userData.role}/dashboard`);
   } else {
@@ -33,44 +38,6 @@ export async function login(data: LoginInput) {
     revalidatePath("/", "layout");
     redirect("/");
   }
-}
-
-export async function loginWithOTP(phone: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    phone,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-  return { success: "OTP sent successfully" };
-}
-
-export async function verifyOTP(phone: string, token: string) {
-  const supabase = await createClient();
-  const { error, data: authData } = await supabase.auth.verifyOtp({
-    phone,
-    token,
-    type: "sms",
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", authData.user?.id)
-    .single();
-
-  if (userData) {
-    revalidatePath("/", "layout");
-    redirect(`/${userData.role}/dashboard`);
-  }
-
-  return { success: true };
 }
 
 export async function register(data: RegisterInput) {
@@ -90,7 +57,7 @@ export async function register(data: RegisterInput) {
     ...(data.role === "agent" && { vehicle_type: data.vehicle_type, coverage_area: data.coverage_area }),
   };
 
-  const { data: authData, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
     options: {

@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useModal } from "@/components/ui/modal-provider";
 import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { MapPin, Navigation, Truck, User, QrCode, CheckCircle, Loader2 } from "lucide-react";
-import { buyerConfirmDelivery } from "@/app/actions/delivery";
+import { MapPin, Navigation, Truck, User, QrCode } from "lucide-react";
 import { QRCodeSVG } from 'qrcode.react';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,8 +12,6 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
   const [currentLocation, setCurrentLocation] = useState<{lat: number, lng: number} | null>(delivery.current_location);
   const [status, setStatus] = useState<string>(delivery.status);
   const [orderStatus, setOrderStatus] = useState<string>(order.status);
-  const { confirm } = useModal();
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -60,13 +55,6 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
       supabase.removeChannel(channel);
     };
   }, [delivery.id, order.id, supabaseUrl, supabaseAnonKey]);
-
-  const handleConfirmReceipt = async () => {
-    if (!(await confirm("Confirm you have received the delivery in good condition?"))) return;
-    setLoading(true);
-    await buyerConfirmDelivery(order.id);
-    setLoading(false);
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -126,16 +114,6 @@ export function TrackingClientPage({ order, delivery, otp, supabaseUrl, supabase
                 <p className="text-sm text-muted-foreground max-w-sm">
                   Show this QR code or provide the OTP to the delivery agent to verify receipt. Escrow funds will only be released after verification.
                 </p>
-                <div className="pt-2">
-                  <Button 
-                    onClick={handleConfirmReceipt} 
-                    disabled={loading || orderStatus === 'delivered' || orderStatus === 'completed'}
-                    className="w-full sm:w-auto"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-                    {orderStatus === 'delivered' || orderStatus === 'completed' ? 'Receipt Confirmed' : 'Confirm Receipt'}
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>

@@ -1,9 +1,17 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createServiceClient } from "@/lib/supabase/service"
 import { revalidatePath } from "next/cache"
 
-async function logAdminAction(supabase: any, adminId: string, actionType: string, targetTable: string, targetId: string, notes?: string) {
+async function logAdminAction(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  adminId: string,
+  actionType: string,
+  targetTable: string,
+  targetId: string,
+  notes?: string
+) {
   await supabase.from("admin_actions").insert({
     admin_id: adminId,
     action_type: actionType,
@@ -24,10 +32,11 @@ export async function toggleUserStatus(userId: string, currentStatus: string, re
   if (adminUser?.role !== 'admin') return { error: "Forbidden: Admins only" }
 
   const newStatus = currentStatus === 'active' ? 'suspended' : 'active'
+  const serviceClient = createServiceClient()
 
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from("users")
-    .update({ account_status: newStatus })
+    .update({ is_active: newStatus === 'active' })
     .eq("id", userId)
 
   if (error) return { error: "Failed to update user status" }
@@ -70,27 +79,24 @@ export async function rejectProduct(productId: string, reason: string) {
   const { data: adminUser } = await supabase.from("users").select("role").eq("id", user.id).single()
   if (adminUser?.role !== 'admin') return { error: "Forbidden: Admins only" }
 
-  // We could mark it as 'rejected' if we add it to the ENUM, or just delete it/hide it.
-  // The prompt says "rejection requires a reason, notifies farmer".
-  // Let's set status to 'out_of_stock' or if we had 'rejected', we'd use that.
-  // Looking at 20240101000000_core_schema.sql, product status is TEXT CHECK (status IN ('pending_approval', 'available', 'out_of_stock', 'delisted'))
+  const serviceClient = createServiceClient()
   const { error } = await supabase
     .from("products")
-    .update({ status: 'delisted' }) // or out_of_stock
+    .update({ status: 'rejected' })
     .eq("id", productId)
 
   if (error) return { error: "Failed to reject product" }
 
-  // TODO: Send notification to farmer about rejection reason (will use notifications table)
   // First get farmer_id
   const { data: product } = await supabase.from("products").select("farmer_id").eq("id", productId).single()
   if (product) {
-    await supabase.from("notifications").insert({
+    const { error: notificationErr } = await serviceClient.from("notifications").insert({
       user_id: product.farmer_id,
-      title: "Product Rejected",
       message: `Your product listing was rejected. Reason: ${reason}`,
       type: "system"
     })
+
+    if (notificationErr) return { error: "Product rejected, but farmer notification failed" }
   }
 
   await logAdminAction(supabase, user.id, 'reject_product', 'products', productId, reason)
@@ -108,8 +114,18 @@ export async function resolveDispute(disputeId: string, orderId: string, resolut
   const { data: adminUser } = await supabase.from("users").select("role").eq("id", user.id).single()
   if (adminUser?.role !== 'admin') return { error: "Forbidden: Admins only" }
 
+  const serviceClient = createServiceClient()
+
+  const { data: order, error: orderFetchErr } = await serviceClient
+    .from("orders")
+    .select("buyer_id, farmer_id")
+    .eq("id", orderId)
+    .single()
+
+  if (orderFetchErr || !order) return { error: "Order not found" }
+
   // Update dispute status
-  const { error: disputeErr } = await supabase
+  const { error: disputeErr } = await serviceClient
     .from("disputes")
     .update({
       status: 'resolved',
@@ -122,18 +138,31 @@ export async function resolveDispute(disputeId: string, orderId: string, resolut
   // Action based on resolution (refund_buyer, release_farmer)
   if (resolution === 'refund_buyer') {
     // Update escrow
-    await supabase.from("escrow_transactions").update({ status: 'refunded' }).eq("order_id", orderId)
+    const { error: escrowErr } = await serviceClient.from("escrow_transactions").update({ status: 'refunded' }).eq("order_id", orderId)
+    if (escrowErr) return { error: "Failed to refund escrow" }
     // Update order
-    await supabase.from("orders").update({ status: 'cancelled' }).eq("id", orderId)
+    const { error: orderErr } = await serviceClient.from("orders").update({ status: 'cancelled' }).eq("id", orderId)
+    if (orderErr) return { error: "Failed to update order" }
   } else if (resolution === 'release_farmer') {
     // Update escrow
-    await supabase.from("escrow_transactions").update({ status: 'released' }).eq("order_id", orderId)
+    const { error: escrowErr } = await serviceClient
+      .from("escrow_transactions")
+      .update({ status: 'released', released_at: new Date().toISOString() })
+      .eq("order_id", orderId)
+    if (escrowErr) return { error: "Failed to release escrow" }
     // Update order
-    await supabase.from("orders").update({ status: 'completed' }).eq("id", orderId)
+    const { error: orderErr } = await serviceClient.from("orders").update({ status: 'completed' }).eq("id", orderId)
+    if (orderErr) return { error: "Failed to update order" }
+  } else {
+    return { error: "Invalid dispute resolution" }
   }
 
   await logAdminAction(supabase, user.id, `resolve_dispute_${resolution}`, 'disputes', disputeId, notes)
   revalidatePath("/admin/disputes")
+  revalidatePath("/buyer/orders")
+  revalidatePath("/farmer/orders")
+  revalidatePath("/buyer/wallet")
+  revalidatePath("/farmer/wallet")
 
   return { success: true }
 }
