@@ -12,10 +12,9 @@ import { useModal } from "@/components/ui/modal-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function AgentDashboardClient({ deliveries: initialDeliveries, unassignedOrders }: { deliveries: any[], unassignedOrders: any[] }) {
+export function AgentDashboardClient({ deliveries, unassignedOrders }: { deliveries: any[], unassignedOrders: any[] }) {
   const router = useRouter();
   const { alert } = useModal();
-  const [deliveries, setDeliveries] = useState(initialDeliveries);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [trackingId, setTrackingId] = useState<string | null>(null);
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});

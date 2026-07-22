@@ -9,8 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, MoreVertical, ShieldAlert, CheckCircle, Loader2 } from "lucide-react";
 import { toggleUserStatus } from "@/app/actions/admin";
 
-export function UsersClient({ users: initialUsers }: { users: any[] }) {
-  const [users, setUsers] = useState(initialUsers);
+export function UsersClient({ users }: { users: any[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { alert, confirm } = useModal();

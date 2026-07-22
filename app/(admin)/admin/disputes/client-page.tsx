@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { resolveDispute } from "@/app/actions/admin";
 import { Loader2, AlertTriangle, ArrowRightLeft, User, DollarSign } from "lucide-react";
 
-export function DisputesClient({ disputes: initialDisputes }: { disputes: any[] }) {
-  const [disputes, setDisputes] = useState(initialDisputes);
+export function DisputesClient({ disputes }: { disputes: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { alert } = useModal();
 

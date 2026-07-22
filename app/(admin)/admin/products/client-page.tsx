@@ -7,8 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { approveProduct, rejectProduct } from "@/app/actions/admin";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
-export function ProductsClient({ products: initialProducts }: { products: any[] }) {
-  const [products, setProducts] = useState(initialProducts);
+export function ProductsClient({ products }: { products: any[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { alert } = useModal();
 
@@ -16,7 +15,6 @@ export function ProductsClient({ products: initialProducts }: { products: any[] 
     setLoadingId(`approve-${productId}`);
     const result = await approveProduct(productId);
     if (result.error) await alert(result.error);
-    else setProducts((prev) => prev.filter((p) => p.id !== productId));
     setLoadingId(null);
   };
 

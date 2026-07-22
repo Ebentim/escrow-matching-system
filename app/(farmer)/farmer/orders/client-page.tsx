@@ -14,10 +14,9 @@ import { useModal } from "@/components/ui/modal-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function FarmerOrdersClient({ orders: initialOrders }: { orders: any[] }) {
+export function FarmerOrdersClient({ orders }: { orders: any[] }) {
   const router = useRouter();
   const { alert, confirm } = useModal();
-  const [orders, setOrders] = useState(initialOrders);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [ratingTarget, setRatingTarget] = useState<{orderId: string, role: string, revieweeId: string} | null>(null);
   const [ratingForm, setRatingForm] = useState({ rating: 5, comment: '' });
